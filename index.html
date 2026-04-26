@@ -646,9 +646,62 @@ body.light .goals-cancel{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.1);
 body.light .goals-cancel:hover{background:rgba(0,0,0,.09);color:var(--t1)}
 body.light .goals-row{border-bottom-color:rgba(0,0,0,.07)}
 body.light .goals-footer{border-top-color:rgba(0,0,0,.07)}
+
+/* ══════════ LOGIN SCREEN ══════════ */
+.login-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;
+  justify-content:center;background:var(--bg0);}
+.login-screen::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 60% 50% at 30% 30%,rgba(139,92,246,.13) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 40% at 75% 75%,rgba(59,130,246,.10) 0%,transparent 60%)}
+.login-card{width:100%;max-width:400px;background:var(--bg1);border:1px solid var(--bd2);
+  border-radius:24px;padding:44px 36px 38px;position:relative;z-index:1;
+  box-shadow:0 48px 96px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04)}
+.login-logo{width:56px;height:56px;border-radius:16px;
+  background:linear-gradient(135deg,var(--pu),var(--bl));
+  display:flex;align-items:center;justify-content:center;font-size:26px;
+  margin:0 auto 20px;box-shadow:0 0 32px var(--pug)}
+.login-title{font-size:22px;font-weight:900;color:var(--t1);text-align:center;
+  letter-spacing:-.5px;margin-bottom:4px}
+.login-sub{font-size:12.5px;color:var(--t3);text-align:center;margin-bottom:30px}
+.login-field{margin-bottom:14px}
+.login-label{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;
+  letter-spacing:1px;margin-bottom:6px;display:block}
+.login-inp{width:100%;background:var(--g8);border:1px solid var(--bd2);border-radius:11px;
+  padding:11px 14px;font-size:14px;color:var(--t1);font-family:inherit;
+  transition:border-color .15s,box-shadow .15s}
+.login-inp:focus{outline:none;border-color:var(--pu);box-shadow:0 0 0 3px var(--pug);background:var(--g12)}
+.login-err{font-size:12px;color:var(--rel);margin-bottom:12px;display:none;
+  background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);
+  border-radius:8px;padding:8px 12px}
+.login-btn{width:100%;padding:13px;border-radius:12px;border:none;margin-top:6px;
+  background:linear-gradient(135deg,var(--pu),var(--bl));color:#fff;
+  font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+  box-shadow:0 4px 18px rgba(139,92,246,.4);transition:all .15s}
+.login-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.login-btn:active{transform:translateY(0)}
 </style>
 </head>
 <body>
+
+<!-- ════════════ LOGIN SCREEN ════════════ -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">📊</div>
+    <div class="login-title">Affiliate Tracker Pro</div>
+    <div class="login-sub">Sign in to access your dashboard</div>
+    <div class="login-field">
+      <label class="login-label">Username</label>
+      <input class="login-inp" id="loginUser" type="text" placeholder="Enter username" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label class="login-label">Password</label>
+      <input class="login-inp" id="loginPass" type="password" placeholder="Enter password" autocomplete="current-password">
+    </div>
+    <div class="login-err" id="loginErr">❌ Incorrect username or password</div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
 <div class="app">
 
 <!-- ════════════ SIDEBAR ════════════ -->
@@ -733,7 +786,7 @@ body.light .goals-footer{border-top-color:rgba(0,0,0,.07)}
     <button class="footer-btn hi" onclick="fetchLiveData()">🔄 Refresh Live Data</button>
     <button class="footer-btn" id="btnDarkMode" onclick="toggleDarkMode()">🌙 Dark Mode</button>
     <button class="footer-btn" onclick="exportCSV()">📥 Export CSV</button>
-    <button class="footer-btn danger" onclick="toast('👋 Logged out successfully')">🚪 Logout</button>
+    <button class="footer-btn danger" onclick="localStorage.removeItem('atp_auth');location.reload()">🚪 Logout</button>
   </div>
 </aside>
 
@@ -2746,6 +2799,29 @@ document.addEventListener('click', function(e){
 /* ════════════════════════════════════════════
    INIT
 ════════════════════════════════════════════ */
+
+/* ── Login ── */
+const _LU = 'ZakariaelKarimi';
+const _LP = '1419944Za@';
+function doLogin(){
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginErr');
+  if(u === _LU && p === _LP){
+    localStorage.setItem('atp_auth','1');
+    document.getElementById('loginScreen').style.display='none';
+    err.style.display='none';
+  } else {
+    err.style.display='block';
+    document.getElementById('loginPass').value='';
+  }
+}
+document.getElementById('loginUser').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginPass').focus(); });
+document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+/* check auth on load */
+if(localStorage.getItem('atp_auth')==='1'){
+  document.getElementById('loginScreen').style.display='none';
+}
 
 /* ── Dark Mode ── */
 function toggleDarkMode(){
