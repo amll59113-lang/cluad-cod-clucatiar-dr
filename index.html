@@ -2848,8 +2848,14 @@ loadAll();
    user connects/disconnects via the UI, and it persists permanently. */
 if(_firstRun){
   conns['drcash1'] = { token:'ZJK2ZTQ2NWETZTM4YS00MJU1LTK1ODQTNDM2NGM2NTAXMDUY', connectedAt:Date.now() };
+  conns['drcash2'] = { token:'ODY1NDE0NJITMWY0NS00NWU2LWIWNMQTMME3Y2IWYTJMNZY0', connectedAt:Date.now() };
   conns['tiktok']  = { token:'20260425184542CB1CAF8DE572535F4AE0', advertiserId:'7549623163967717392', connectedAt:Date.now() };
   saveConns();
+} else {
+  if(!conns['drcash2'] || !conns['drcash2'].token){
+    conns['drcash2'] = { token:'ODY1NDE0NJITMWY0NS00NWU2LWIWNMQTMME3Y2IWYTJMNZY0', connectedAt:Date.now() };
+    saveConns();
+  }
 }
 
 /* initialise calendar trigger label to today */
