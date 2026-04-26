@@ -1,13 +1,2802 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Affiliate Tracker Pro</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Affiliate Tracker Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ─── TOKENS ─── */
+:root{
+  --bg0:#03050e;--bg1:#070c1a;--bg2:#0b1024;
+  --g5:rgba(255,255,255,.05);--g8:rgba(255,255,255,.08);--g12:rgba(255,255,255,.12);
+  --bd:rgba(255,255,255,.07);--bd2:rgba(255,255,255,.11);
+  --t1:#eef2ff;--t2:#8b9ab8;--t3:#475569;
+  --pu:#8b5cf6;--pul:#a78bfa;--pug:rgba(139,92,246,.25);
+  --bl:#3b82f6;--bll:#60a5fa;--blg:rgba(59,130,246,.25);
+  --gr:#10b981;--grl:#34d399;--grg:rgba(16,185,129,.25);
+  --or:#f97316;--orl:#fb923c;--org:rgba(249,115,22,.25);
+  --ye:#f59e0b;--yel:#fbbf24;--yeg:rgba(245,158,11,.25);
+  --re:#ef4444;--rel:#f87171;--reg:rgba(239,68,68,.25);
+  --sw:268px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  -webkit-font-smoothing:antialiased;background:var(--bg0);color:var(--t1);overflow:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 15%,rgba(139,92,246,.09) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 40% at 85% 85%,rgba(59,130,246,.07) 0%,transparent 60%),
+    radial-gradient(ellipse 40% 30% at 50% 50%,rgba(16,185,129,.04) 0%,transparent 70%)}
+
+.app{display:flex;height:100vh;position:relative;z-index:1}
+
+/* ══════════ SIDEBAR ══════════ */
+.sidebar{width:var(--sw);height:100vh;flex-shrink:0;display:flex;flex-direction:column;
+  background:rgba(7,12,26,.97);border-right:1px solid var(--bd);overflow-y:auto;position:relative}
+.sidebar::after{content:'';position:absolute;top:0;right:0;width:1px;height:100%;
+  background:linear-gradient(180deg,transparent,var(--pug) 40%,var(--blg) 70%,transparent);pointer-events:none}
+.sb-logo{display:flex;align-items:center;gap:11px;padding:22px 18px 18px;border-bottom:1px solid var(--bd)}
+.sb-logo-icon{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--pu),var(--bl));
+  display:flex;align-items:center;justify-content:center;font-size:19px;
+  box-shadow:0 0 22px var(--pug),0 4px 12px rgba(0,0,0,.4);flex-shrink:0}
+.sb-logo-text{font-size:14.5px;font-weight:800;
+  background:linear-gradient(135deg,var(--pul),var(--bll));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.4px;line-height:1.2}
+.sb-logo-sub{font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:1.2px;margin-top:1px}
+.sb-nav{padding:12px 10px;border-bottom:1px solid var(--bd)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;
+  cursor:pointer;transition:all .2s;font-size:13.5px;font-weight:500;color:var(--t2);border:1px solid transparent;user-select:none}
+.nav-item:hover{background:var(--g8);color:var(--t1)}
+.nav-item.active{background:linear-gradient(135deg,rgba(139,92,246,.18),rgba(59,130,246,.10));
+  color:var(--t1);border-color:rgba(139,92,246,.28);box-shadow:0 0 14px rgba(139,92,246,.08)}
+.sb-section{padding:14px 10px;border-bottom:1px solid var(--bd)}
+.sb-label{font-size:9.5px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1.6px;padding:0 12px;margin-bottom:8px}
+.platform-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;
+  cursor:pointer;transition:all .2s;font-size:13px;font-weight:500;color:var(--t2);border:1px solid transparent;user-select:none;position:relative}
+.platform-item:hover{background:var(--g8);color:var(--t1)}
+.platform-item.active{background:linear-gradient(135deg,rgba(16,185,129,.14),rgba(59,130,246,.08));
+  color:var(--t1);border-color:rgba(16,185,129,.22)}
+.platform-item.connected{border-color:rgba(16,185,129,.35)!important;background:linear-gradient(135deg,rgba(16,185,129,.10),rgba(16,185,129,.04))!important}
+.platform-item.connected .p-name{color:var(--t1)}
+.p-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.p-tt{background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.1)}
+.p-fb{background:rgba(24,119,242,.18)}
+.p-dc{background:rgba(16,185,129,.18)}
+.p-ac{background:rgba(245,158,11,.18)}
+.p-dot{width:7px;height:7px;border-radius:50%;background:var(--gr);box-shadow:0 0 7px var(--gr);
+  margin-left:auto;animation:pulse 2s ease-in-out infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 6px var(--gr)}50%{opacity:.6;box-shadow:0 0 12px var(--gr)}}
+/* connected check badge that appears on sidebar items */
+.conn-check{display:none;width:18px;height:18px;border-radius:50%;
+  background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.45);
+  align-items:center;justify-content:center;font-size:9px;margin-left:auto;
+  flex-shrink:0;color:var(--grl);font-weight:900}
+.platform-item.connected .conn-check{display:flex}
+.platform-item.connected .p-dot{display:none}/* hide pulsing dot when check shows */
+/* Dr.Cash per-account gear + active-filter styles */
+.dc-gear{display:none;width:20px;height:20px;border-radius:5px;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.1);color:var(--t3);font-size:10px;
+  align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
+  transition:all .15s;padding:0;font-family:inherit;margin-left:auto}
+.dc-gear:hover{background:rgba(255,255,255,.15);color:var(--t1)}
+.platform-item.connected .dc-gear{display:flex}
+.platform-item.connected .conn-check{margin-left:4px}
+.platform-item.dc-active{background:linear-gradient(135deg,rgba(16,185,129,.28),rgba(59,130,246,.15))!important;
+  border-color:rgba(16,185,129,.55)!important;box-shadow:0 0 18px rgba(16,185,129,.15)}
+.platform-item.dc-active .p-name{color:var(--grl)!important}
+/* filter banner */
+.dc-filter-banner{display:none;align-items:center;justify-content:space-between;
+  margin-bottom:14px;padding:9px 14px;border-radius:10px;
+  background:linear-gradient(135deg,rgba(16,185,129,.14),rgba(59,130,246,.09));
+  border:1px solid rgba(16,185,129,.3);font-size:13px;color:var(--t1)}
+.dc-filter-banner.show{display:flex}
+.dc-filter-banner strong{color:var(--grl)}
+.dc-fb-back{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+  color:var(--t2);font-size:11.5px;padding:4px 10px;border-radius:7px;cursor:pointer;
+  font-family:inherit;transition:all .15s}
+.dc-fb-back:hover{background:rgba(255,255,255,.13);color:var(--t1)}
+
+/* footer */
+.sb-footer{margin-top:auto;padding:14px 10px;border-top:1px solid var(--bd)}
+.user-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
+  background:var(--g5);border:1px solid var(--bd);margin-bottom:10px}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--pu),var(--bl));
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;box-shadow:0 0 10px var(--pug)}
+.user-email{font-size:11.5px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.footer-btn{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;
+  cursor:pointer;transition:all .18s;font-size:12.5px;font-weight:500;color:var(--t2);
+  border:none;background:transparent;width:100%;text-align:left;font-family:inherit}
+.footer-btn:hover{background:var(--g8);color:var(--t1)}
+.footer-btn.hi{background:linear-gradient(135deg,rgba(139,92,246,.18),rgba(59,130,246,.10));
+  color:var(--pul);border:1px solid rgba(139,92,246,.22);margin:4px 0}
+.footer-btn.hi:hover{filter:brightness(1.1)}
+.footer-btn.danger:hover{background:rgba(239,68,68,.1);color:var(--rel)}
+
+/* ══════════ MAIN ══════════ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.top-header{display:flex;align-items:center;justify-content:space-between;padding:16px 26px;
+  border-bottom:1px solid var(--bd);background:rgba(7,12,26,.85);backdrop-filter:blur(12px);flex-shrink:0}
+.page-title{font-size:21px;font-weight:800;color:var(--t1);letter-spacing:-.6px}
+.header-actions{display:flex;align-items:center;gap:8px}
+.btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;
+  font-size:12.5px;font-weight:600;cursor:pointer;transition:all .2s;border:none;font-family:inherit}
+.btn-ghost{background:var(--g8);color:var(--t2);border:1px solid var(--bd)}
+.btn-ghost:hover{background:var(--g12);color:var(--t1)}
+.btn-pill{background:var(--g5);color:var(--t2);border:1px solid var(--bd);border-radius:20px;padding:6px 16px;
+  font-size:12.5px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;display:inline-flex;align-items:center;gap:5px}
+.btn-pill:hover{background:var(--g12);color:var(--t1)}
+.btn-pill.active{background:linear-gradient(135deg,rgba(139,92,246,.22),rgba(59,130,246,.14));
+  color:var(--pul);border-color:rgba(139,92,246,.36);box-shadow:0 0 16px rgba(139,92,246,.14)}
+.btn-pill-g{background:var(--g5);color:var(--t2);border:1px solid var(--bd);border-radius:20px;padding:6px 16px;
+  font-size:12.5px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;display:inline-flex;align-items:center;gap:5px}
+.btn-pill-g:hover{background:var(--g12);color:var(--t1)}
+.btn-pill-g.on{background:linear-gradient(135deg,rgba(16,185,129,.22),rgba(59,130,246,.10));
+  color:var(--grl);border-color:rgba(16,185,129,.36);box-shadow:0 0 16px rgba(16,185,129,.12)}
+/* connected state on header pills */
+.btn-pill.conn,.btn-pill-g.conn{
+  border-color:rgba(16,185,129,.5)!important;color:var(--grl)!important;
+  box-shadow:0 0 14px rgba(16,185,129,.18)!important}
+.hdr-conn-dot{width:7px;height:7px;border-radius:50%;background:var(--gr);
+  box-shadow:0 0 5px var(--gr);display:inline-block;flex-shrink:0}
+
+.content{flex:1;overflow-y:auto;padding:22px 26px}
+.date-card{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;
+  background:var(--g5);border:1px solid var(--bd);border-radius:14px;margin-bottom:18px}
+.date-nav-btn{width:36px;height:36px;border-radius:10px;background:var(--g8);border:1px solid var(--bd);
+  color:var(--t2);cursor:pointer;font-size:22px;display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1}
+.date-nav-btn:hover{background:var(--g12);color:var(--t1);transform:scale(1.05)}
+.date-info{text-align:center}
+.date-label{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:3px}
+.date-value{font-size:17px;font-weight:700;color:var(--t1)}
+.no-data{text-align:center;padding:60px 20px;background:var(--g5);border:1px solid var(--bd);
+  border-radius:18px;margin-bottom:18px;display:none}
+.no-data.show{display:block}
+.no-data-icon{font-size:40px;margin-bottom:12px}
+.no-data-text{font-size:16px;font-weight:600;color:var(--t2);margin-bottom:6px}
+.no-data-sub{font-size:13px;color:var(--t3)}
+.metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
+.metric-card{position:relative;overflow:hidden;background:var(--g5);border:1px solid var(--bd);
+  border-radius:22px;padding:22px 24px 20px;transition:transform .3s,box-shadow .3s,border-color .3s,background .3s}
+.metric-card::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--ca),transparent)}
+.metric-card::after{content:'';position:absolute;top:-60px;right:-40px;width:160px;height:160px;border-radius:50%;
+  background:radial-gradient(circle,var(--cg) 0%,transparent 70%);pointer-events:none}
+.metric-card:hover{transform:translateY(-4px);border-color:var(--cb);
+  box-shadow:0 24px 48px rgba(0,0,0,.4),0 0 36px var(--cs);background:var(--g8)}
+.c-spend{--ca:var(--or);--cb:rgba(249,115,22,.32);--cg:rgba(249,115,22,.12);--cs:rgba(249,115,22,.1)}
+.c-income{--ca:var(--pul);--cb:rgba(139,92,246,.32);--cg:rgba(139,92,246,.12);--cs:rgba(139,92,246,.1)}
+.c-profit{--ca:var(--gr);--cb:rgba(16,185,129,.32);--cg:rgba(16,185,129,.12);--cs:rgba(16,185,129,.1)}
+.m-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.m-label{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1.2px}
+.m-icon{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.i-or{background:rgba(249,115,22,.15);box-shadow:0 0 14px rgba(249,115,22,.12)}
+.i-pu{background:rgba(139,92,246,.15);box-shadow:0 0 14px rgba(139,92,246,.12)}
+.i-gr{background:rgba(16,185,129,.15);box-shadow:0 0 14px rgba(16,185,129,.12)}
+.m-value{font-size:38px;font-weight:900;letter-spacing:-2px;line-height:1;margin-bottom:8px;font-variant-numeric:tabular-nums}
+.v-or{color:var(--orl)}.v-pu{color:var(--pul)}.v-gr{color:var(--grl)}.v-re{color:var(--rel)}
+.m-sub{font-size:13px;color:var(--t3);font-weight:500}
+.c-green{color:var(--grl)}.c-red{color:var(--rel)}
+.leads-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:14px}
+.lead-card{background:var(--g5);border:1px solid var(--bd);border-radius:18px;padding:20px;transition:all .3s;cursor:default}
+.lead-card:hover{transform:translateY(-3px);background:var(--g8);border-color:var(--bd2);box-shadow:0 14px 32px rgba(0,0,0,.3)}
+.l-icon{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;margin-bottom:14px}
+.i-blue{background:rgba(59,130,246,.15)}.i-green{background:rgba(16,185,129,.15)}
+.i-red{background:rgba(239,68,68,.15)}.i-yellow{background:rgba(245,158,11,.15)}.i-dim{background:rgba(139,154,184,.12)}
+.l-value{font-size:34px;font-weight:900;letter-spacing:-1.5px;margin-bottom:4px;font-variant-numeric:tabular-nums}
+.lv-blue{color:var(--bll)}.lv-green{color:var(--grl)}.lv-red{color:var(--rel)}.lv-or{color:var(--orl)}.lv-yellow{color:var(--yel)}.lv-dim{color:var(--t2)}
+.l-label{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.8px}
+.l-sub{font-size:10.5px;color:var(--t3);font-weight:500;margin-top:4px}
+.cost-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.cost-card{background:var(--g5);border:1px solid var(--bd);border-radius:14px;padding:18px 20px;
+  display:flex;align-items:center;justify-content:space-between;transition:all .25s}
+.cost-card:hover{transform:translateY(-2px);background:var(--g8)}
+.cost-lbl{font-size:10.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px}
+.cost-val{font-size:22px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.cv-blue{color:var(--bll)}.cv-green{color:var(--grl)}.cv-yellow{color:var(--yel)}.cv-red{color:var(--rel)}
+.cost-ico{font-size:26px;opacity:.5}
+.glow-div{height:1px;background:linear-gradient(90deg,transparent,rgba(139,92,246,.28),rgba(59,130,246,.18),transparent);margin:20px 0}
+.sec-block{margin-bottom:22px}
+.sec-title{font-size:14.5px;font-weight:700;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--bd)}
+.brk-card{background:var(--g5);border:1px solid var(--bd);border-radius:14px;overflow:hidden;margin-bottom:12px;transition:all .25s}
+.brk-card:hover{border-color:rgba(16,185,129,.22)}
+.brk-header{padding:13px 20px;background:rgba(16,185,129,.06);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px}
+.acc-tag{font-size:11.5px;font-weight:700;color:var(--grl);background:rgba(16,185,129,.16);padding:3px 10px;border-radius:6px;letter-spacing:.3px}
+.acc-name{font-size:13px;font-weight:600;color:var(--t1)}
+.brk-stats{display:grid;grid-template-columns:repeat(5,1fr);padding:16px 20px;gap:10px}
+.brk-stat{text-align:center}
+.brk-stat-lbl{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+.brk-stat-val{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+.bsv-gr{color:var(--grl)}.bsv-bl{color:var(--bll)}.bsv-re{color:var(--rel)}.bsv-or{color:var(--orl)}.bsv-ye{color:var(--yel)}
+.brk-stat-trash{background:rgba(139,92,246,.08);border-radius:8px}
+.brk-stat-trash .brk-stat-lbl{color:var(--t3)}
+.brk-stat-trash .brk-stat-val{color:var(--t2)!important}
+.offer-item{display:flex;align-items:center;gap:16px;padding:15px 20px;background:var(--g5);border:1px solid var(--bd);
+  border-radius:14px;margin-bottom:10px;transition:all .3s cubic-bezier(.4,0,.2,1);cursor:default}
+.offer-item:hover{transform:translateX(5px);background:var(--g8);border-color:rgba(139,92,246,.22);box-shadow:0 0 24px rgba(139,92,246,.08)}
+.o-rank{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0}
+.r1{background:rgba(245,158,11,.2);color:#fbbf24}.r2{background:rgba(148,163,184,.2);color:#94a3b8}
+.r3{background:rgba(249,115,22,.2);color:#fb923c}.r4{background:rgba(139,92,246,.2);color:var(--pul)}
+.r5{background:rgba(59,130,246,.2);color:var(--bll)}
+.o-info{flex:1;min-width:0}
+.o-name{font-size:13px;font-weight:600;color:var(--t1);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.o-tags{display:flex;gap:6px}
+.o-tag{font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:5px;text-transform:uppercase;letter-spacing:.6px}
+.tag-dc{background:rgba(16,185,129,.15);color:var(--grl)}.tag-ac{background:rgba(245,158,11,.15);color:var(--yel)}
+.o-right{display:flex;align-items:center;gap:18px;flex-shrink:0;margin-left:auto}
+.o-inline-stats{font-size:13px;color:var(--t2);font-weight:500;white-space:nowrap}
+.o-inline-stats .osg{color:var(--grl);font-weight:700}
+.o-inline-stats .osy{color:var(--yel);font-weight:700}
+.o-earn{font-size:20px;font-weight:900;color:var(--grl);text-align:right;min-width:88px;flex-shrink:0;font-variant-numeric:tabular-nums}
+.input-sec{background:var(--g5);border:1px solid var(--bd);border-radius:22px;padding:22px 24px;margin-bottom:16px}
+.input-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}
+.form-grp{display:flex;flex-direction:column;gap:7px}
+.form-lbl{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px}
+.form-inp{background:rgba(255,255,255,.05);border:1px solid var(--bd2);border-radius:10px;padding:11px 16px;
+  font-size:15px;font-weight:600;color:var(--t1);outline:none;transition:all .2s;font-family:inherit;
+  font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.form-inp::-webkit-outer-spin-button,.form-inp::-webkit-inner-spin-button{-webkit-appearance:none}
+.form-inp:focus{border-color:var(--pu);box-shadow:0 0 0 3px var(--pug);background:rgba(255,255,255,.07)}
+.form-inp::placeholder{color:var(--t3);font-weight:400}
+.btn-save{background:linear-gradient(135deg,var(--pu),var(--bl));color:#fff;border:none;
+  padding:11px 28px;border-radius:10px;font-size:13.5px;font-weight:700;cursor:pointer;
+  transition:all .3s;white-space:nowrap;box-shadow:0 4px 20px var(--pug);font-family:inherit;letter-spacing:.2px}
+.btn-save:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--pug),0 0 20px rgba(59,130,246,.2);filter:brightness(1.1)}
+.btn-save:active{transform:translateY(0)}
+
+/* ══════════ TOASTS ══════════ */
+.toast-wrap{position:fixed;top:18px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{padding:13px 18px;border-radius:12px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;
+  backdrop-filter:blur(20px);box-shadow:0 12px 32px rgba(0,0,0,.35);max-width:320px;
+  animation:ti .35s cubic-bezier(.34,1.56,.64,1)}
+.toast.ok{background:rgba(16,185,129,.16);border:1px solid rgba(16,185,129,.3);color:var(--grl);box-shadow:0 12px 32px rgba(0,0,0,.35),0 0 20px rgba(16,185,129,.08)}
+.toast.err{background:rgba(239,68,68,.16);border:1px solid rgba(239,68,68,.3);color:var(--rel)}
+@keyframes ti{from{opacity:0;transform:translateX(24px) scale(.95)}to{opacity:1;transform:translateX(0) scale(1)}}
+
+/* ══════════ CONNECTION MODAL ══════════ */
+.moverlay{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.72);backdrop-filter:blur(8px);
+  opacity:0;pointer-events:none;transition:opacity .22s ease}
+.moverlay.open{opacity:1;pointer-events:all}
+.mcard{width:460px;max-width:calc(100vw - 24px);
+  background:rgba(8,12,26,.98);border:1px solid rgba(255,255,255,.1);border-radius:26px;
+  overflow:hidden;box-shadow:0 48px 96px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.04),inset 0 1px 0 rgba(255,255,255,.06);
+  transform:scale(.9) translateY(18px);transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+.moverlay.open .mcard{transform:scale(1) translateY(0)}
+.mcard-head{position:relative;padding:34px 28px 26px;text-align:center;border-bottom:1px solid rgba(255,255,255,.07)}
+.mclose{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:9px;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.5);
+  font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;font-family:inherit}
+.mclose:hover{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.15)}
+.mnet-icon{width:70px;height:70px;border-radius:20px;margin:0 auto 16px;
+  display:flex;align-items:center;justify-content:center;font-size:34px;
+  transition:box-shadow .3s}
+.mnet-name{font-size:21px;font-weight:800;color:var(--t1);letter-spacing:-.5px;margin-bottom:5px}
+.mnet-sub{font-size:13px;color:var(--t2);font-weight:500}
+.mconn-badge{display:none;align-items:center;gap:7px;padding:5px 14px;border-radius:20px;
+  background:rgba(16,185,129,.14);border:1px solid rgba(16,185,129,.3);color:var(--grl);
+  font-size:12px;font-weight:700;margin:12px auto 0;width:fit-content}
+.mconn-badge.show{display:flex}
+.mconn-badge-dot{width:7px;height:7px;border-radius:50%;background:var(--gr);box-shadow:0 0 6px var(--gr);animation:pulse 2s ease-in-out infinite}
+.mcard-body{padding:26px 28px 30px}
+.mlbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:9px}
+.minp-wrap{position:relative;margin-bottom:12px}
+.minp{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.11);
+  border-radius:12px;padding:13px 50px 13px 16px;font-size:14px;font-weight:500;
+  color:var(--t1);outline:none;transition:all .22s;font-family:inherit;letter-spacing:.3px}
+.minp:focus{border-color:var(--pu);box-shadow:0 0 0 3px var(--pug);background:rgba(255,255,255,.08)}
+.minp::placeholder{color:var(--t3);font-weight:400;letter-spacing:0}
+.minp.shake{animation:shake .35s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.minp.err-border{border-color:rgba(239,68,68,.6)!important;box-shadow:0 0 0 3px var(--reg)!important}
+.meye{position:absolute;right:0;top:0;bottom:0;width:46px;background:none;border:none;
+  cursor:pointer;color:var(--t3);font-size:16px;display:flex;align-items:center;justify-content:center;
+  transition:color .18s;border-radius:0 12px 12px 0}
+.meye:hover{color:var(--t1)}
+.mhint{font-size:12px;color:var(--t3);line-height:1.6;margin-bottom:10px;padding:11px 14px;
+  background:rgba(255,255,255,.03);border-radius:9px;border-left:3px solid rgba(139,92,246,.4)}
+.mhint strong{color:var(--t2);font-weight:600}
+.mtoken-preview{font-size:11.5px;color:var(--t2);margin-bottom:18px;padding:8px 14px;
+  background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);border-radius:8px;
+  display:none;font-family:monospace;letter-spacing:.5px;word-break:break-all}
+.mtoken-preview.show{display:block}
+.mdisconn{font-size:12.5px;color:rgba(239,68,68,.7);cursor:pointer;text-align:right;
+  margin-bottom:18px;display:none;font-weight:500;transition:color .18s}
+.mdisconn:hover{color:var(--rel)}
+.mdisconn.show{display:block}
+.mbtns{display:flex;gap:10px}
+.mbtn-cancel{flex:1;padding:13px;border-radius:11px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);color:var(--t2);font-size:13.5px;font-weight:600;
+  cursor:pointer;transition:all .2s;font-family:inherit}
+.mbtn-cancel:hover{background:rgba(255,255,255,.11);color:var(--t1)}
+.mbtn-connect{flex:2;padding:13px;border-radius:11px;
+  background:linear-gradient(135deg,var(--pu) 0%,var(--bl) 100%);color:#fff;border:none;
+  font-size:13.5px;font-weight:700;cursor:pointer;transition:all .3s;font-family:inherit;
+  box-shadow:0 4px 20px var(--pug);letter-spacing:.2px}
+.mbtn-connect:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--pug),0 0 18px rgba(59,130,246,.2);filter:brightness(1.1)}
+.mbtn-connect:active{transform:translateY(0)}
+
+/* animations */
+@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fu .4s ease both}.fu1{animation:fu .4s .05s ease both}.fu2{animation:fu .4s .1s ease both}
+.fu3{animation:fu .4s .15s ease both}.fu4{animation:fu .4s .2s ease both}
+
+/* ── live badge ── */
+.live-badge{display:none;font-size:11px;font-weight:700;color:var(--grl);
+  background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.28);
+  border-radius:20px;padding:4px 12px;letter-spacing:.6px;flex-shrink:0}
+.live-badge.show{display:inline-flex;align-items:center;gap:6px;animation:pulse 2s ease-in-out infinite}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--gr);box-shadow:0 0 6px var(--gr);flex-shrink:0}
+/* lead percentage sub-labels */
+.l-pct{font-size:12px;font-weight:600;color:var(--t3);margin-top:3px;letter-spacing:.2px}
+
+/* ── change arrow badges ── */
+.chg{display:inline-flex;align-items:center;gap:2px;font-size:11.5px;font-weight:700;
+  border-radius:6px;padding:2px 8px;letter-spacing:.2px;line-height:1.6}
+.chg-up{background:rgba(16,185,129,.14);color:var(--grl)}
+.chg-dn{background:rgba(239,68,68,.14);color:var(--rel)}
+.chg-flat{background:rgba(148,163,184,.1);color:var(--t3)}
+.m-chg{margin:6px 0 3px;min-height:24px}
+.l-chg,.c-chg{margin-top:4px;min-height:22px}
+
+/* ── balance bar ── */
+.balance-bar{display:flex;align-items:center;gap:0;background:linear-gradient(135deg,rgba(16,185,129,.09),rgba(59,130,246,.06));
+  border:1px solid rgba(16,185,129,.2);border-radius:14px;padding:14px 24px;
+  margin-bottom:12px;flex-wrap:wrap;gap:0}
+.bal-item{display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px;text-align:center}
+.bal-lbl{font-size:10.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.8px}
+.bal-val{font-size:18px;font-weight:800;color:var(--grl);font-variant-numeric:tabular-nums}
+.bal-sep{width:1px;height:36px;background:var(--bd);margin:0 8px}
+
+/* ── monthly goal card ── */
+.goal-card{display:flex;align-items:center;gap:20px;
+  background:linear-gradient(135deg,rgba(139,92,246,.08),rgba(59,130,246,.05));
+  border:1px solid rgba(139,92,246,.2);border-radius:14px;
+  padding:15px 22px;margin-bottom:16px;transition:border-color .25s}
+.goal-card:hover{border-color:rgba(139,92,246,.32)}
+.goal-label-block{flex-shrink:0;min-width:0}
+.goal-title{font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;
+  letter-spacing:.8px;margin-bottom:2px;display:flex;align-items:center;gap:6px}
+.goal-month{font-size:10px;color:var(--t3);font-weight:500}
+.goal-mid{flex:1;min-width:0}
+.goal-prog-wrap{height:7px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden;margin-bottom:7px}
+.goal-prog{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--pu),var(--bl));
+  width:0;transition:width .9s cubic-bezier(.4,0,.2,1)}
+.goal-nums{display:flex;align-items:center;gap:5px;font-size:12px;flex-wrap:wrap}
+.goal-cur{font-weight:800;color:var(--pul);font-variant-numeric:tabular-nums}
+.goal-of{color:var(--t3)}
+.goal-target-val{font-weight:600;color:var(--t2);font-variant-numeric:tabular-nums}
+.goal-right{flex-shrink:0;text-align:right}
+.goal-pct{font-size:24px;font-weight:900;letter-spacing:-1px;color:var(--pul);
+  font-variant-numeric:tabular-nums;line-height:1}
+.goal-rem{font-size:10.5px;color:var(--t3);margin-top:3px;white-space:nowrap;font-weight:500}
+.spend-edit-btn{margin-top:10px;background:none;border:1px solid rgba(249,115,22,.25);color:var(--t3);
+  font-size:11px;font-weight:600;padding:5px 12px;border-radius:8px;cursor:pointer;font-family:inherit;transition:all .18s}
+.spend-edit-btn:hover{background:rgba(249,115,22,.12);color:var(--orl);border-color:rgba(249,115,22,.4)}
+.goal-edit-btn{background:none;border:1px solid rgba(139,92,246,.25);color:var(--t3);
+  border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:inherit;
+  transition:all .18s;margin-top:4px;display:block;width:100%;text-align:center}
+.goal-edit-btn:hover{background:rgba(139,92,246,.12);color:var(--pul);border-color:rgba(139,92,246,.4)}
+
+/* ══════════ QUICK FILTER PILLS ══════════ */
+.range-bar{display:flex;align-items:center;gap:5px;padding:0 0 14px;overflow-x:auto;
+  flex-shrink:0;scrollbar-width:none;-ms-overflow-style:none}
+.range-bar::-webkit-scrollbar{display:none}
+.range-pill{padding:7px 16px;border-radius:20px;font-size:12.5px;font-weight:600;
+  cursor:pointer;transition:all .2s;border:1px solid var(--bd);background:var(--g5);
+  color:var(--t2);white-space:nowrap;font-family:inherit;display:inline-flex;
+  align-items:center;gap:5px;flex-shrink:0;outline:none}
+.range-pill:hover{background:var(--g12);color:var(--t1);border-color:var(--bd2);
+  transform:translateY(-1px)}
+.range-pill.active{background:linear-gradient(135deg,rgba(139,92,246,.22),rgba(59,130,246,.14));
+  color:var(--pul);border-color:rgba(139,92,246,.38);
+  box-shadow:0 0 18px rgba(139,92,246,.14),0 2px 8px rgba(0,0,0,.2)}
+.range-bar-sep{width:1px;height:18px;background:var(--bd);flex-shrink:0;margin:0 3px}
+
+/* ══════════ CALENDAR DATE RANGE PICKER ══════════ */
+.cal-wrap{position:relative;margin-bottom:18px}
+.cal-trigger{display:flex;align-items:center;gap:14px;width:100%;padding:14px 20px;
+  background:var(--g5);border:1px solid var(--bd);border-radius:14px;cursor:pointer;
+  transition:all .22s;font-family:inherit;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.cal-trigger:hover{background:var(--g8);border-color:var(--bd2)}
+.cal-trigger.open{border-color:rgba(16,185,129,.4);
+  box-shadow:0 0 0 3px rgba(16,185,129,.09),inset 0 1px 0 rgba(255,255,255,.04)}
+.cal-trigger-ico{font-size:18px;flex-shrink:0;line-height:1}
+.cal-trigger-body{flex:1;min-width:0;text-align:left}
+.cal-trigger-lbl{font-size:10.5px;font-weight:700;color:var(--t3);text-transform:uppercase;
+  letter-spacing:1.1px;margin-bottom:3px}
+.cal-trigger-val{font-size:16px;font-weight:700;color:var(--t1);letter-spacing:-.3px}
+.cal-trigger-chevron{flex-shrink:0;color:var(--t3);transition:transform .22s;width:16px;height:16px}
+.cal-trigger.open .cal-trigger-chevron{transform:rotate(180deg)}
+
+.cal-dropdown{position:absolute;top:calc(100% + 10px);left:0;z-index:600;width:638px;
+  background:rgba(7,12,26,.98);border:1px solid rgba(255,255,255,.1);border-radius:20px;
+  box-shadow:0 32px 80px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.04),
+    inset 0 1px 0 rgba(255,255,255,.05);
+  opacity:0;pointer-events:none;
+  transform:translateY(-10px) scale(.97);
+  transition:opacity .2s ease,transform .24s cubic-bezier(.34,1.56,.64,1)}
+.cal-dropdown.open{opacity:1;pointer-events:all;transform:translateY(0) scale(1)}
+
+.cal-months-grid{display:grid;grid-template-columns:1fr 1px 1fr}
+.cal-divider{background:rgba(255,255,255,.07);margin:20px 0}
+.cal-month-panel{padding:22px 22px 18px}
+
+.cal-mnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:6px}
+.cal-nav-grp{display:flex;gap:4px}
+.cal-nb{background:none;border:1px solid var(--bd);color:var(--t3);
+  width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:13px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;font-family:inherit;line-height:1}
+.cal-nb:hover{background:var(--g12);color:var(--t1);border-color:var(--bd2)}
+.cal-mlbl{font-size:14px;font-weight:700;color:var(--t1);letter-spacing:-.3px;
+  white-space:nowrap;text-align:center;flex:1}
+
+.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px}
+.cal-dow span{font-size:10.5px;font-weight:600;color:var(--t3);
+  text-align:center;padding:3px 0;letter-spacing:.5px}
+
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr);row-gap:2px}
+.cal-d{position:relative;display:flex;align-items:center;justify-content:center;
+  height:34px;font-size:13px;font-weight:500;color:var(--t2);border-radius:8px;
+  cursor:pointer;transition:background .12s,color .12s;user-select:none;z-index:1}
+.cal-d:not(.cal-other):not(.cal-fut):hover{background:var(--g12);color:var(--t1)}
+.cal-d.cal-other{color:var(--t3);opacity:.28;pointer-events:none}
+.cal-d.cal-fut{opacity:.22;pointer-events:none}
+.cal-d.cal-today{color:var(--grl);font-weight:700}
+.cal-d.cal-today::after{content:'';position:absolute;bottom:3px;left:50%;
+  transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--gr)}
+.cal-d.cal-in{background:rgba(16,185,129,.11);border-radius:0;color:var(--t1)}
+.cal-d.cal-in:hover{background:rgba(16,185,129,.19)}
+.cal-d.cal-rs,.cal-d.cal-re{background:var(--gr)!important;color:#fff!important;
+  font-weight:700;border-radius:8px!important;z-index:2;
+  box-shadow:0 0 16px rgba(16,185,129,.5)}
+.cal-d.cal-rs::after,.cal-d.cal-re::after{display:none}
+.cal-d.cal-rs.cal-in{border-radius:8px 0 0 8px!important}
+.cal-d.cal-re.cal-in{border-radius:0 8px 8px 8px!important}
+.cal-d.cal-row-s.cal-in{border-radius:8px 0 0 8px}
+.cal-d.cal-row-e.cal-in{border-radius:0 8px 8px 8px}
+.cal-d.cal-single{background:var(--gr)!important;color:#fff!important;
+  font-weight:700;box-shadow:0 0 16px rgba(16,185,129,.5)}
+.cal-d.cal-single::after{display:none}
+
+.cal-foot{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 22px;border-top:1px solid rgba(255,255,255,.07);
+  background:rgba(3,5,14,.5);border-radius:0 0 20px 20px}
+.cal-foot-lbl{font-size:12px;color:var(--t3);font-weight:500}
+.cal-foot-lbl b{color:var(--grl);font-weight:700}
+.cal-foot-btns{display:flex;gap:8px}
+.cal-btn-cancel{padding:8px 18px;border-radius:9px;background:var(--g8);
+  border:1px solid var(--bd);color:var(--t2);font-size:12.5px;font-weight:600;
+  cursor:pointer;transition:all .18s;font-family:inherit}
+.cal-btn-cancel:hover{background:var(--g12);color:var(--t1)}
+.cal-btn-confirm{padding:8px 22px;border-radius:9px;font-size:12.5px;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:all .2s;border:none;color:#fff;
+  background:linear-gradient(135deg,#10b981,#059669);
+  box-shadow:0 4px 14px rgba(16,185,129,.35)}
+.cal-btn-confirm:hover:not(:disabled){transform:translateY(-1px);
+  box-shadow:0 6px 20px rgba(16,185,129,.5);filter:brightness(1.08)}
+.cal-btn-confirm:disabled{opacity:.32;cursor:not-allowed;transform:none;
+  filter:none;box-shadow:none}
+
+/* ══════════ LIGHT MODE ══════════ */
+body.light{
+  --bg0:#f0f4fb;--bg1:#f8faff;--bg2:#ffffff;
+  --g5:rgba(0,0,0,.04);--g8:rgba(0,0,0,.06);--g12:rgba(0,0,0,.10);
+  --bd:rgba(0,0,0,.08);--bd2:rgba(0,0,0,.13);
+  --t1:#0f172a;--t2:#475569;--t3:#94a3b8;
+  --pug:rgba(139,92,246,.14);--blg:rgba(59,130,246,.14);--grg:rgba(16,185,129,.14);
+  background:var(--bg0);color:var(--t1);
+}
+body.light::before{opacity:.08}
+/* structural surfaces */
+body.light .sidebar{background:#ffffff;border-right-color:rgba(0,0,0,.09)}
+body.light .sidebar::after{display:none}
+body.light .topbar{background:rgba(255,255,255,.93);border-bottom-color:rgba(0,0,0,.08)}
+/* connection modal */
+body.light .moverlay{background:rgba(80,100,140,.45)}
+body.light .mcard{background:#ffffff;border-color:rgba(0,0,0,.1);
+  box-shadow:0 32px 80px rgba(0,0,0,.14),0 0 0 1px rgba(0,0,0,.04)}
+body.light .mcard-head{border-bottom-color:rgba(0,0,0,.08)}
+body.light .mclose{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.08);color:rgba(0,0,0,.4)}
+body.light .mclose:hover{background:rgba(0,0,0,.1);color:var(--t1)}
+body.light .minp{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.12);color:var(--t1)}
+body.light .minp:focus{background:#fff;border-color:var(--pu);box-shadow:0 0 0 3px var(--pug)}
+body.light .mhint{background:rgba(0,0,0,.03);border-left-color:rgba(0,0,0,.15)}
+body.light .mtoken-preview{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.1)}
+body.light .mbtn-cancel{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.1);color:var(--t2)}
+body.light .mbtn-cancel:hover{background:rgba(0,0,0,.09);color:var(--t1)}
+body.light .dc-gear{background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.12);color:var(--t3)}
+body.light .dc-gear:hover{background:rgba(0,0,0,.11);color:var(--t1)}
+/* calendar */
+body.light .cal-dropdown{background:#ffffff;border-color:rgba(0,0,0,.1);
+  box-shadow:0 16px 48px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.04)}
+body.light .cal-foot{background:rgba(240,244,251,.9)}
+body.light .cal-nb{border-color:rgba(0,0,0,.12);color:var(--t2)}
+body.light .cal-nb:hover{background:rgba(0,0,0,.07);color:var(--t1);border-color:rgba(0,0,0,.2)}
+body.light .cal-d{color:var(--t2)}
+body.light .cal-d:not(.cal-other):not(.cal-fut):hover{background:rgba(0,0,0,.07);color:var(--t1)}
+body.light .cal-d.cal-today{color:var(--gr)}
+body.light .cal-d.cal-in{background:rgba(16,185,129,.1)}
+/* settings overlay */
+body.light .settings-ov{background:rgba(80,100,140,.45)}
+body.light .settings-panel{background:#ffffff;border-color:rgba(0,0,0,.1)}
+body.light .settings-head{background:linear-gradient(135deg,rgba(139,92,246,.07),rgba(59,130,246,.04))}
+/* api cards inside settings */
+body.light .api-card{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.08)}
+body.light .api-card.is-conn{background:rgba(16,185,129,.05)}
+/* brk card */
+body.light .brk-card{border-color:rgba(0,0,0,.09)}
+body.light .brk-header{background:rgba(16,185,129,.06)}
+body.light .brk-stat-trash{background:rgba(139,92,246,.07)}
+/* misc */
+body.light .dc-filter-banner{background:rgba(16,185,129,.09);border-color:rgba(16,185,129,.25)}
+body.light .goal-card{background:rgba(139,92,246,.06);border-color:rgba(139,92,246,.18)}
+body.light .balance-bar{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.08)}
+
+/* ══════════ SETTINGS OVERLAY ══════════ */
+.settings-ov{position:fixed;inset:0;z-index:1500;display:flex;align-items:flex-start;
+  justify-content:center;background:rgba(3,5,14,.88);backdrop-filter:blur(10px);
+  padding:28px 16px 40px;overflow-y:auto;opacity:0;pointer-events:none;
+  transition:opacity .22s ease}
+.settings-ov.open{opacity:1;pointer-events:all}
+.settings-panel{width:100%;max-width:800px;background:var(--bg1);
+  border:1px solid var(--bd2);border-radius:24px;overflow:hidden;
+  box-shadow:0 48px 96px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04)}
+.settings-head{padding:30px 32px 26px;border-bottom:1px solid var(--bd);
+  display:flex;align-items:flex-start;gap:16px;
+  background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(59,130,246,.07))}
+.settings-head-text{flex:1;min-width:0}
+.settings-eyebrow{font-size:10.5px;font-weight:700;color:var(--t3);
+  text-transform:uppercase;letter-spacing:1.2px;margin-bottom:5px}
+.settings-title{font-size:22px;font-weight:900;color:var(--t1);letter-spacing:-.5px;margin-bottom:4px}
+.settings-desc{font-size:12.5px;color:var(--t2)}
+.settings-close-btn{width:34px;height:34px;border-radius:9px;background:var(--g8);
+  border:1px solid var(--bd);color:var(--t2);font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:all .15s;font-family:inherit;margin-top:2px}
+.settings-close-btn:hover{background:var(--g12);color:var(--t1);border-color:var(--bd2)}
+.settings-body{padding:26px 32px 32px}
+.settings-sec{margin-bottom:28px}
+.settings-sec:last-child{margin-bottom:0}
+.settings-sec-lbl{font-size:10.5px;font-weight:700;color:var(--t3);
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;
+  display:flex;align-items:center;gap:8px}
+.settings-sec-lbl::after{content:'';flex:1;height:1px;background:var(--bd)}
+
+/* account card */
+.api-card{display:flex;align-items:center;gap:16px;padding:15px 18px;
+  background:var(--g5);border:1px solid var(--bd);border-radius:14px;
+  margin-bottom:8px;transition:border-color .2s,background .2s}
+.api-card:last-child{margin-bottom:0}
+.api-card.is-conn{border-color:rgba(16,185,129,.3);
+  background:linear-gradient(135deg,rgba(16,185,129,.05),var(--g5))}
+.api-card-icon{width:46px;height:46px;border-radius:13px;display:flex;
+  align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
+.api-card-info{flex:1;min-width:0}
+.api-card-name{font-size:14px;font-weight:700;color:var(--t1);margin-bottom:3px}
+.api-card-status{font-size:11px;font-weight:700;letter-spacing:.3px;margin-bottom:5px}
+.api-card-status.on{color:var(--grl)}.api-card-status.off{color:var(--t3)}
+.api-card-meta{font-size:11px;color:var(--t3);font-family:monospace;
+  line-height:1.55;word-break:break-all}
+.api-card-since{font-size:10.5px;color:var(--t3);margin-top:3px;font-family:inherit}
+.api-card-btns{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.api-btn{padding:6px 13px;border-radius:8px;font-size:11.5px;font-weight:600;
+  cursor:pointer;border:1px solid;transition:all .15s;font-family:inherit;white-space:nowrap}
+.api-btn-edit{background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.3);color:var(--pul)}
+.api-btn-edit:hover{background:rgba(139,92,246,.22);border-color:rgba(139,92,246,.5)}
+.api-btn-refresh{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.25);color:var(--bll)}
+.api-btn-refresh:hover{background:rgba(59,130,246,.2);border-color:rgba(59,130,246,.45)}
+.api-btn-connect{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.28);color:var(--grl)}
+.api-btn-connect:hover{background:rgba(16,185,129,.2);border-color:rgba(16,185,129,.5)}
+.api-btn-delete{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.22);color:var(--rel)}
+.api-btn-delete:hover{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.4)}
+
+/* ══════════ GOALS MODAL ══════════ */
+.goals-ov{position:fixed;inset:0;z-index:1500;display:flex;align-items:flex-start;
+  justify-content:center;background:rgba(3,5,14,.88);backdrop-filter:blur(10px);
+  padding:28px 16px 40px;overflow-y:auto;opacity:0;pointer-events:none;
+  transition:opacity .22s ease}
+.goals-ov.open{opacity:1;pointer-events:all}
+.goals-panel{width:100%;max-width:620px;background:var(--bg1);
+  border:1px solid var(--bd2);border-radius:24px;overflow:hidden;
+  box-shadow:0 48px 96px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04)}
+.goals-head{padding:28px 30px 24px;border-bottom:1px solid var(--bd);
+  display:flex;align-items:flex-start;gap:16px;
+  background:linear-gradient(135deg,rgba(16,185,129,.14),rgba(139,92,246,.08))}
+.goals-body{padding:24px 30px 30px}
+.goals-row{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--bd)}
+.goals-row:last-of-type{border-bottom:none}
+.goals-row-icon{width:44px;height:44px;border-radius:12px;display:flex;
+  align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.goals-row-info{flex:1;min-width:0}
+.goals-row-label{font-size:13.5px;font-weight:700;color:var(--t1);margin-bottom:2px}
+.goals-row-desc{font-size:11px;color:var(--t3);line-height:1.45}
+.goals-row-ctrl{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.goals-unit{font-size:13px;font-weight:700;color:var(--t2)}
+.goals-inp{width:130px;background:var(--g8);border:1px solid var(--bd2);border-radius:10px;
+  padding:9px 12px;font-size:14px;font-weight:700;color:var(--t1);font-family:inherit;
+  text-align:right;transition:border-color .15s,box-shadow .15s}
+.goals-inp:focus{outline:none;border-color:var(--pu);box-shadow:0 0 0 3px var(--pug);background:var(--g12)}
+.goals-inp::-webkit-inner-spin-button,.goals-inp::-webkit-outer-spin-button{-webkit-appearance:none}
+.goals-daily-val{font-size:16px;font-weight:800;color:var(--grl);min-width:100px;text-align:right}
+.goals-footer{margin-top:20px;padding-top:18px;border-top:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:flex-end;gap:10px}
+.goals-cancel{padding:10px 22px;border-radius:10px;background:var(--g8);
+  border:1px solid var(--bd2);color:var(--t2);font-size:13px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:all .15s}
+.goals-cancel:hover{background:var(--g12);color:var(--t1)}
+.goals-save{padding:10px 28px;border-radius:10px;
+  background:linear-gradient(135deg,var(--gr),var(--pu));border:none;
+  color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+  box-shadow:0 4px 18px rgba(16,185,129,.3);transition:all .15s}
+.goals-save:hover{filter:brightness(1.1);transform:translateY(-1px)}
+body.light .goals-ov{background:rgba(80,100,140,.45)}
+body.light .goals-panel{background:#ffffff;border-color:rgba(0,0,0,.1)}
+body.light .goals-head{background:linear-gradient(135deg,rgba(16,185,129,.07),rgba(139,92,246,.04))}
+body.light .goals-inp{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.12);color:var(--t1)}
+body.light .goals-inp:focus{background:#fff;border-color:var(--pu);box-shadow:0 0 0 3px var(--pug)}
+body.light .goals-cancel{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.1);color:var(--t2)}
+body.light .goals-cancel:hover{background:rgba(0,0,0,.09);color:var(--t1)}
+body.light .goals-row{border-bottom-color:rgba(0,0,0,.07)}
+body.light .goals-footer{border-top-color:rgba(0,0,0,.07)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ════════════ SIDEBAR ════════════ -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-icon">📊</div>
+    <div>
+      <div class="sb-logo-text">Affiliate Tracker</div>
+      <div class="sb-logo-sub">Pro Dashboard</div>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="nav-item active" onclick="setNav(this,'Daily Overview')"><span>📅</span> Daily</div>
+    <div class="nav-item" onclick="setNav(this,'Monthly Overview')"><span>📆</span> Monthly</div>
+  </nav>
+
+  <!-- Ad Platforms -->
+  <div class="sb-section">
+    <div class="sb-label">Ad Platforms</div>
+    <div class="platform-item active" data-net="tiktok" onclick="openModal('tiktok')">
+      <div class="p-icon p-tt">🎵</div>
+      <span class="p-name">TikTok Ads</span>
+      <div class="p-dot"></div>
+      <div class="conn-check">✓</div>
+    </div>
+    <div class="platform-item" data-net="meta1" onclick="openModal('meta1')">
+      <div class="p-icon p-fb">🔵</div>
+      <span class="p-name">Meta Ads 1</span>
+      <div class="conn-check">✓</div>
+    </div>
+    <div class="platform-item" data-net="meta2" onclick="openModal('meta2')">
+      <div class="p-icon p-fb">🔵</div>
+      <span class="p-name">Meta Ads 2</span>
+      <div class="conn-check">✓</div>
+    </div>
+    <div class="platform-item" data-net="meta3" onclick="openModal('meta3')">
+      <div class="p-icon p-fb">🔵</div>
+      <span class="p-name">Meta Ads 3</span>
+      <div class="conn-check">✓</div>
+    </div>
+  </div>
+
+  <!-- CPA Networks -->
+  <div class="sb-section">
+    <div class="sb-label">CPA Networks</div>
+    <div class="platform-item" data-net="drcash1" onclick="dcItemClick('drcash1',event)">
+      <div class="p-icon p-dc">💊</div>
+      <span class="p-name">Dr.Cash 1</span>
+      <button class="dc-gear" onclick="event.stopPropagation();openModal('drcash1')" title="Manage connection">⚙</button>
+      <div class="conn-check">✓</div>
+    </div>
+    <div class="platform-item" data-net="drcash2" onclick="dcItemClick('drcash2',event)">
+      <div class="p-icon p-dc">💊</div>
+      <span class="p-name">Dr.Cash 2</span>
+      <button class="dc-gear" onclick="event.stopPropagation();openModal('drcash2')" title="Manage connection">⚙</button>
+      <div class="conn-check">✓</div>
+    </div>
+    <div class="platform-item" data-net="drcash3" onclick="dcItemClick('drcash3',event)">
+      <div class="p-icon p-dc">💊</div>
+      <span class="p-name">Dr.Cash 3</span>
+      <button class="dc-gear" onclick="event.stopPropagation();openModal('drcash3')" title="Manage connection">⚙</button>
+      <div class="conn-check">✓</div>
+    </div>
+    <div class="platform-item" data-net="adcombo" onclick="openModal('adcombo')">
+      <div class="p-icon p-ac">🎯</div>
+      <span class="p-name">AdCombo</span>
+      <div class="conn-check">✓</div>
+    </div>
+  </div>
+
+  <div class="sb-footer">
+    <div class="user-row">
+      <div class="user-avatar">Z</div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--t1)">Zakaria Karimi</div>
+        <div class="user-email">zakiar429@gmail.com</div>
+      </div>
+    </div>
+    <button class="footer-btn" onclick="openSettings()">⚙️ API Settings</button>
+    <button class="footer-btn" onclick="openGoals()">🎯 Set Goals</button>
+    <button class="footer-btn hi" onclick="fetchLiveData()">🔄 Refresh Live Data</button>
+    <button class="footer-btn" id="btnDarkMode" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+    <button class="footer-btn" onclick="exportCSV()">📥 Export CSV</button>
+    <button class="footer-btn danger" onclick="toast('👋 Logged out successfully')">🚪 Logout</button>
+  </div>
+</aside>
+
+<!-- ════════════ MAIN ════════════ -->
+<main class="main">
+  <div class="top-header">
+    <div style="display:flex;align-items:center;gap:12px">
+      <h1 class="page-title" id="pageTitle">Daily Overview</h1>
+      <div class="live-badge" id="liveBadge"><div class="live-dot"></div> LIVE</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost" onclick="fetchLiveData()">⟳ Refresh</button>
+      <button class="btn-pill" id="btnTT" onclick="openModal('tiktok')">
+        <span id="ttDot"></span>🎵 TikTok
+      </button>
+      <button class="btn-pill" id="btnMeta" onclick="openModal('meta1')">
+        <span id="metaDot"></span>🔵 Meta
+      </button>
+      <button class="btn-pill-g on" id="btnDC" onclick="openModal('drcash1')">
+        <span id="dcDot"></span>💊 Dr.Cash
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- ── Quick Filter Pills ── -->
+    <div class="range-bar fu" id="rangeBar">
+      <button class="range-pill active" data-range="today"     onclick="pillSelect('today')">Today</button>
+      <button class="range-pill"        data-range="yesterday" onclick="pillSelect('yesterday')">Yesterday</button>
+      <div class="range-bar-sep"></div>
+      <button class="range-pill"        data-range="last7"     onclick="pillSelect('last7')">Last 7 Days</button>
+      <button class="range-pill"        data-range="last30"    onclick="pillSelect('last30')">Last 30 Days</button>
+      <div class="range-bar-sep"></div>
+      <button class="range-pill"        data-range="thismonth" onclick="pillSelect('thismonth')">This Month</button>
+      <button class="range-pill"        data-range="lastmonth" onclick="pillSelect('lastmonth')">Last Month</button>
+      <div class="range-bar-sep"></div>
+      <button class="range-pill"        data-range="alltime"   onclick="pillSelect('alltime')">All Time</button>
+    </div>
+
+    <!-- ── Calendar Date Range Picker ── -->
+    <div class="cal-wrap fu" id="calWrap">
+      <button class="cal-trigger" id="calTrigger" onclick="toggleCalendar(event)">
+        <span class="cal-trigger-ico">📅</span>
+        <div class="cal-trigger-body">
+          <div class="cal-trigger-lbl" id="dateRel">Date Range</div>
+          <div class="cal-trigger-val" id="dateVal">April 26, 2026</div>
+        </div>
+        <svg class="cal-trigger-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+
+      <div class="cal-dropdown" id="calDropdown"
+        onclick="event.stopPropagation();var _t=event.target.closest('[data-ds]');if(_t)calDayClick(_t.dataset.ds)"
+        onmouseover="var _t=event.target.closest('[data-ds]');if(_t)calHovDay(_t.dataset.ds)"
+        onmouseleave="calLeaveGrid()">
+        <div class="cal-months-grid">
+          <div class="cal-month-panel" id="calPanelLeft"></div>
+          <div class="cal-divider"></div>
+          <div class="cal-month-panel" id="calPanelRight"></div>
+        </div>
+        <div class="cal-foot">
+          <span class="cal-foot-lbl" id="calFootLbl">Select a start date</span>
+          <div class="cal-foot-btns">
+            <button class="cal-btn-cancel" onclick="calCancel()">Cancel</button>
+            <button class="cal-btn-confirm" id="calOkBtn" onclick="calConfirm()" disabled>Confirm</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dc-filter-banner" id="dcFilterBanner">
+      <span>Viewing <strong id="dcFilterLabel">Dr.Cash 1</strong> only — all other accounts hidden</span>
+      <button class="dc-fb-back" onclick="clearDCFilter()">← Show All Accounts</button>
+    </div>
+
+    <div class="no-data" id="noData">
+      <div class="no-data-icon">📭</div>
+      <div class="no-data-text" id="noDataText">No data for this date</div>
+      <div class="no-data-sub">Use the form below to add data for this day</div>
+    </div>
+
+    <div class="balance-bar" id="balBar" style="display:none">
+      <div class="bal-item">
+        <span class="bal-lbl">💰 Available Balance</span>
+        <span class="bal-val" id="balAvail">$0.00</span>
+      </div>
+      <div class="bal-sep"></div>
+      <div class="bal-item">
+        <span class="bal-lbl">⏳ Pending Payout</span>
+        <span class="bal-val" id="balPend">$0.00</span>
+      </div>
+      <div class="bal-sep"></div>
+      <div class="bal-item">
+        <span class="bal-lbl">🕐 Last refresh</span>
+        <span class="bal-val" id="balTime" style="font-size:11px;color:var(--t3)">—</span>
+      </div>
+    </div>
+
+    <div class="goal-card" id="goalCard" style="display:none">
+      <div class="goal-label-block">
+        <div class="goal-title">🎯 Monthly Profit Goal</div>
+        <div class="goal-month" id="goalMonth">April 2026</div>
+      </div>
+      <div class="goal-mid">
+        <div class="goal-prog-wrap"><div class="goal-prog" id="goalBar"></div></div>
+        <div class="goal-nums">
+          <span class="goal-cur" id="goalCur">$0</span>
+          <span class="goal-of">profit of</span>
+          <span class="goal-target-val" id="goalTargetLbl">$60,000</span>
+          <span class="goal-of" id="goalRemSpan">— $60,000 remaining</span>
+        </div>
+      </div>
+      <div class="goal-right">
+        <div class="goal-pct" id="goalPct">0%</div>
+        <button class="goal-edit-btn" onclick="editGoal()">✏️ Edit Goal</button>
+      </div>
+    </div>
+
+    <div class="metrics-grid" id="mainContent">
+      <div class="metric-card c-spend fu1">
+        <div class="m-header"><span class="m-label">Total Spend</span><div class="m-icon i-or">💸</div></div>
+        <div class="m-value v-or" id="mSpend">$0.00</div>
+        <div class="m-chg" id="chgSpend"></div>
+        <div class="m-sub" id="mSpendSub">TikTok $0</div>
+        <button class="spend-edit-btn" onclick="promptSpend()">✏️ Enter Spend</button>
+      </div>
+      <div class="metric-card c-income fu2">
+        <div class="m-header"><span class="m-label">Total Income</span><div class="m-icon i-pu">💰</div></div>
+        <div class="m-value v-pu" id="mIncome">$0.00</div>
+        <div class="m-chg" id="chgIncome"></div>
+        <div class="m-sub" id="mIncomeSub">Dr.Cash + AdCombo</div>
+      </div>
+      <div class="metric-card c-profit fu3">
+        <div class="m-header"><span class="m-label">Net Profit</span><div class="m-icon i-gr">📈</div></div>
+        <div class="m-value v-gr" id="mProfit">$0.00</div>
+        <div class="m-chg" id="chgProfit"></div>
+        <div class="m-sub" id="mRoi">ROI: 0.0%</div>
+      </div>
+    </div>
+
+    <div class="leads-grid" id="leadsGrid">
+      <div class="lead-card fu">
+        <div class="l-icon i-blue">👥</div>
+        <div class="l-value lv-blue" id="lTotal">0</div>
+        <div class="l-label">Total Leads</div>
+        <div class="l-chg" id="chgTotal"></div>
+      </div>
+      <div class="lead-card fu">
+        <div class="l-icon i-green">✅</div>
+        <div class="l-value lv-green" id="lApproved">0</div>
+        <div class="l-label">Approved</div>
+        <div class="l-pct" id="lApprovedPct"></div>
+        <div class="l-chg" id="chgApproved"></div>
+      </div>
+      <div class="lead-card fu">
+        <div class="l-icon i-red">❌</div>
+        <div class="l-value lv-red" id="lRejected">0</div>
+        <div class="l-label">Rejected</div>
+        <div class="l-pct" id="lRejectedPct"></div>
+        <div class="l-chg" id="chgRejected"></div>
+      </div>
+      <div class="lead-card fu">
+        <div class="l-icon i-dim">🗑️</div>
+        <div class="l-value lv-dim" id="lTrash">0</div>
+        <div class="l-label">Trash</div>
+        <div class="l-pct" id="lTrashPct"></div>
+        <div class="l-chg" id="chgTrash"></div>
+      </div>
+      <div class="lead-card fu">
+        <div class="l-icon i-yellow">⏳</div>
+        <div class="l-value lv-yellow" id="lHold">0</div>
+        <div class="l-label">Hold</div>
+        <div class="l-pct" id="lHoldPct"></div>
+        <div class="l-chg" id="chgHold"></div>
+      </div>
+    </div>
+
+    <div class="cost-grid" id="costGrid">
+      <div class="cost-card fu">
+        <div>
+          <div class="cost-lbl">Cost / Lead (CPL)</div>
+          <div class="cost-val cv-blue" id="cCPL">--</div>
+          <div class="c-chg" id="chgCPL"></div>
+        </div>
+        <div class="cost-ico">🎯</div>
+      </div>
+      <div class="cost-card fu">
+        <div>
+          <div class="cost-lbl">Cost / Approved (CPA)</div>
+          <div class="cost-val cv-green" id="cCPA">--</div>
+          <div class="c-chg" id="chgCPA"></div>
+        </div>
+        <div class="cost-ico">✅</div>
+      </div>
+      <div class="cost-card fu">
+        <div>
+          <div class="cost-lbl">Cost / Hold (CPH)</div>
+          <div class="cost-val cv-yellow" id="cCPH">--</div>
+          <div class="c-chg" id="chgCPH"></div>
+        </div>
+        <div class="cost-ico">⏳</div>
+      </div>
+      <div class="cost-card fu">
+        <div>
+          <div class="cost-lbl">Cost / Rejected (CPR)</div>
+          <div class="cost-val cv-red" id="cCPT">--</div>
+          <div class="c-chg" id="chgCPT"></div>
+        </div>
+        <div class="cost-ico">❌</div>
+      </div>
+    </div>
+
+    <div class="glow-div" id="div1"></div>
+
+    <div class="sec-block" id="brkSection">
+      <h2 class="sec-title">💊 Dr.Cash Breakdown</h2>
+      <div id="brkContainer"></div>
+    </div>
+
+    <div class="sec-block" id="offersSection">
+      <h2 class="sec-title">🏆 Top 5 Offers</h2>
+      <div id="offersContainer"></div>
+    </div>
+
+    <div class="glow-div" id="div2"></div>
+
+    <div class="input-sec fu">
+      <h2 class="sec-title">✏️ Update Day Data</h2>
+      <div class="input-grid">
+        <div class="form-grp">
+          <label class="form-lbl">Spend ($)</label>
+          <input type="number" class="form-inp" id="inSpend" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl">Income ($) <span style="color:var(--t3);font-weight:400">— auto from Dr.Cash</span></label>
+          <input type="number" class="form-inp" id="inIncome" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <button class="btn-save" onclick="saveDay()">💾 Save Day</button>
+      </div>
+    </div>
+
+    <div style="height:40px"></div>
+  </div>
+</main>
+</div><!-- .app -->
+
+<!-- ════════════ CONNECTION MODAL ════════════ -->
+<!-- ════════════ API SETTINGS OVERLAY ════════════ -->
+<div class="settings-ov" id="settingsOv" onclick="if(event.target===this)closeSettings()">
+  <div class="settings-panel">
+    <div class="settings-head">
+      <div class="settings-head-text">
+        <div class="settings-eyebrow">Configuration</div>
+        <div class="settings-title">⚙️ API Settings</div>
+        <div class="settings-desc">Manage all connected advertising and affiliate network integrations</div>
+      </div>
+      <button class="settings-close-btn" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="settings-body" id="settingsBody"></div>
+  </div>
+</div>
+
+<div class="goals-ov" id="goalsOv" onclick="if(event.target===this)closeGoals()">
+  <div class="goals-panel">
+    <div class="goals-head">
+      <div class="settings-head-text">
+        <div class="settings-eyebrow">Performance Targets</div>
+        <div class="settings-title">🎯 Goals & KPIs</div>
+        <div class="settings-desc">Set monthly targets to track progress across all key metrics</div>
+      </div>
+      <button class="settings-close-btn" onclick="closeGoals()">✕</button>
+    </div>
+    <div class="goals-body" id="goalsBody"></div>
+  </div>
+</div>
+
+<div class="moverlay" id="mOverlay" onclick="overlayClick(event)">
+  <div class="mcard" id="mCard">
+
+    <!-- Header -->
+    <div class="mcard-head" id="mHead">
+      <button class="mclose" onclick="closeModal()">✕</button>
+      <div class="mnet-icon" id="mIcon">🎵</div>
+      <div class="mnet-name" id="mName">TikTok Ads</div>
+      <div class="mnet-sub" id="mSub">Connect your account</div>
+      <div class="mconn-badge" id="mBadge">
+        <div class="mconn-badge-dot"></div>
+        Connected
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="mcard-body">
+      <label class="mlbl" for="mToken">API Token / Access Token</label>
+      <div class="minp-wrap">
+        <input type="password" class="minp" id="mToken"
+               placeholder="Paste your API token here…"
+               autocomplete="off" spellcheck="false">
+        <button class="meye" id="mEye" onclick="toggleVis()" title="Show / hide token">👁</button>
+      </div>
+      <!-- TikTok-only: Advertiser ID field -->
+      <div id="mAdvIdWrap" style="display:none;margin-top:12px">
+        <label class="mlbl" for="mAdvId">Advertiser ID</label>
+        <input type="text" class="minp" id="mAdvId"
+               placeholder="e.g. 7224063951129018370"
+               autocomplete="off" spellcheck="false">
+      </div>
+      <div class="mhint" id="mHint"></div>
+      <div class="mtoken-preview" id="mPreview"></div>
+      <div class="mdisconn" id="mDisconn" onclick="disconnectNet()">🔌 Disconnect this account</div>
+      <div class="mbtns">
+        <button class="mbtn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="mbtn-connect" id="mConnectBtn" onclick="connectNet()">Connect →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ TOASTS ════════════ -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* ════════════════════════════════════════════
+   NETWORK REGISTRY
+════════════════════════════════════════════ */
+const NETS = {
+  tiktok: {
+    name: 'TikTok Ads',
+    icon: '🎵',
+    headBg: 'linear-gradient(135deg,rgba(0,0,0,.7) 0%,rgba(105,201,208,.18) 100%)',
+    iconBg: 'rgba(0,0,0,.7)',
+    iconGlow: 'rgba(105,201,208,.45)',
+    hint: '<strong>Access Token:</strong> TikTok Ads Manager → My Account → API → Generate Token<br><strong>Advertiser ID:</strong> TikTok Ads Manager → top-left account number',
+  },
+  meta1: {
+    name: 'Meta Ads 1',
+    icon: '🔵',
+    headBg: 'linear-gradient(135deg,rgba(24,119,242,.28) 0%,rgba(10,80,180,.18) 100%)',
+    iconBg: 'rgba(24,119,242,.25)',
+    iconGlow: 'rgba(24,119,242,.45)',
+    hint: 'Find in: <strong>Meta Business Suite</strong> → Settings → System Users → Add → Generate Token',
+  },
+  meta2: {
+    name: 'Meta Ads 2',
+    icon: '🔵',
+    headBg: 'linear-gradient(135deg,rgba(24,119,242,.28) 0%,rgba(10,80,180,.18) 100%)',
+    iconBg: 'rgba(24,119,242,.25)',
+    iconGlow: 'rgba(24,119,242,.45)',
+    hint: 'Find in: <strong>Meta Business Suite</strong> → Settings → System Users → Add → Generate Token',
+  },
+  meta3: {
+    name: 'Meta Ads 3',
+    icon: '🔵',
+    headBg: 'linear-gradient(135deg,rgba(24,119,242,.28) 0%,rgba(10,80,180,.18) 100%)',
+    iconBg: 'rgba(24,119,242,.25)',
+    iconGlow: 'rgba(24,119,242,.45)',
+    hint: 'Find in: <strong>Meta Business Suite</strong> → Settings → System Users → Add → Generate Token',
+  },
+  drcash1: {
+    name: 'Dr.Cash 1',
+    icon: '💊',
+    headBg: 'linear-gradient(135deg,rgba(16,185,129,.28) 0%,rgba(5,150,105,.18) 100%)',
+    iconBg: 'rgba(16,185,129,.22)',
+    iconGlow: 'rgba(16,185,129,.5)',
+    hint: 'Find in: <strong>Dr.Cash Dashboard</strong> → Profile → API Access → Create New Key',
+  },
+  drcash2: {
+    name: 'Dr.Cash 2',
+    icon: '💊',
+    headBg: 'linear-gradient(135deg,rgba(16,185,129,.28) 0%,rgba(5,150,105,.18) 100%)',
+    iconBg: 'rgba(16,185,129,.22)',
+    iconGlow: 'rgba(16,185,129,.5)',
+    hint: 'Find in: <strong>Dr.Cash Dashboard</strong> → Profile → API Access → Create New Key',
+  },
+  drcash3: {
+    name: 'Dr.Cash 3',
+    icon: '💊',
+    headBg: 'linear-gradient(135deg,rgba(16,185,129,.28) 0%,rgba(5,150,105,.18) 100%)',
+    iconBg: 'rgba(16,185,129,.22)',
+    iconGlow: 'rgba(16,185,129,.5)',
+    hint: 'Find in: <strong>Dr.Cash Dashboard</strong> → Profile → API Access → Create New Key',
+  },
+  adcombo: {
+    name: 'AdCombo',
+    icon: '🎯',
+    headBg: 'linear-gradient(135deg,rgba(245,158,11,.28) 0%,rgba(180,100,0,.18) 100%)',
+    iconBg: 'rgba(245,158,11,.22)',
+    iconGlow: 'rgba(245,158,11,.5)',
+    hint: 'Find in: <strong>AdCombo Dashboard</strong> → My Profile → API → Create API Key',
+  },
+};
+
+/* ════════════════════════════════════════════
+   GOALS CONFIG
+════════════════════════════════════════════ */
+let MONTHLY_GOAL = parseFloat(localStorage.getItem('atp_goal')||'60000');
+let GOALS = {
+  profit: parseFloat(localStorage.getItem('atp_goal')||'60000'),
+  leads:  parseFloat(localStorage.getItem('atp_goal_leads')||'0'),
+  spend:  parseFloat(localStorage.getItem('atp_goal_spend')||'0'),
+};
+
+function saveGoal(){ localStorage.setItem('atp_goal', MONTHLY_GOAL); }
+
+/* ── Goals modal ── */
+function openGoals(){
+  renderGoalsPanel();
+  document.getElementById('goalsOv').classList.add('open');
+}
+function closeGoals(){
+  document.getElementById('goalsOv').classList.remove('open');
+}
+
+function renderGoalsPanel(){
+  const daysInMonth = new Date(TODAY.getFullYear(), TODAY.getMonth()+1, 0).getDate();
+  const dailyTarget = GOALS.profit > 0 ? (GOALS.profit / daysInMonth).toFixed(0) : '—';
+  const mn = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthLabel = mn[TODAY.getMonth()] + ' ' + TODAY.getFullYear();
+
+  document.getElementById('goalsBody').innerHTML = `
+    <p style="font-size:11.5px;color:var(--t3);margin-bottom:16px">
+      Targets applied for <strong style="color:var(--t2)">${monthLabel}</strong>. Changes take effect immediately on the dashboard.
+    </p>
+    <div class="goals-row">
+      <div class="goals-row-icon" style="background:rgba(139,92,246,.18)">💰</div>
+      <div class="goals-row-info">
+        <div class="goals-row-label">Monthly Profit Goal</div>
+        <div class="goals-row-desc">Target net profit for the month (income − spend)</div>
+      </div>
+      <div class="goals-row-ctrl">
+        <span class="goals-unit">$</span>
+        <input class="goals-inp" id="ginProfit" type="number" min="0" step="500" value="${GOALS.profit||''}">
+      </div>
+    </div>
+    <div class="goals-row">
+      <div class="goals-row-icon" style="background:rgba(59,130,246,.18)">🎯</div>
+      <div class="goals-row-info">
+        <div class="goals-row-label">Monthly Lead Goal</div>
+        <div class="goals-row-desc">Total leads to generate this month across all networks</div>
+      </div>
+      <div class="goals-row-ctrl">
+        <span class="goals-unit">#</span>
+        <input class="goals-inp" id="ginLeads" type="number" min="0" step="50" value="${GOALS.leads||''}">
+      </div>
+    </div>
+    <div class="goals-row">
+      <div class="goals-row-icon" style="background:rgba(249,115,22,.18)">📊</div>
+      <div class="goals-row-info">
+        <div class="goals-row-label">Monthly Spend Budget</div>
+        <div class="goals-row-desc">Maximum ad spend allowed for the month</div>
+      </div>
+      <div class="goals-row-ctrl">
+        <span class="goals-unit">$</span>
+        <input class="goals-inp" id="ginSpend" type="number" min="0" step="500" value="${GOALS.spend||''}">
+      </div>
+    </div>
+    <div class="goals-row">
+      <div class="goals-row-icon" style="background:rgba(16,185,129,.18)">📈</div>
+      <div class="goals-row-info">
+        <div class="goals-row-label">Daily Profit Target</div>
+        <div class="goals-row-desc">Auto-calculated: monthly profit goal ÷ ${daysInMonth} days</div>
+      </div>
+      <div class="goals-row-ctrl">
+        <span class="goals-daily-val" id="ginDailyAuto">$${dailyTarget}</span>
+      </div>
+    </div>
+    <div class="goals-footer">
+      <button class="goals-cancel" onclick="closeGoals()">Cancel</button>
+      <button class="goals-save" onclick="submitGoals()">💾 Save Goals</button>
+    </div>
+  `;
+
+  document.getElementById('ginProfit').addEventListener('input', function(){
+    const v = parseFloat(this.value) || 0;
+    const el = document.getElementById('ginDailyAuto');
+    if(el) el.textContent = v > 0 ? '$' + Math.round(v / daysInMonth).toLocaleString() : '—';
+  });
+}
+
+function submitGoals(){
+  const p = parseFloat(document.getElementById('ginProfit').value) || 0;
+  const l = parseFloat(document.getElementById('ginLeads').value)  || 0;
+  const s = parseFloat(document.getElementById('ginSpend').value)  || 0;
+  if(!isFinite(p) || p < 0){ toast('Invalid profit goal', 'err'); return; }
+  GOALS.profit = p; GOALS.leads = l; GOALS.spend = s;
+  MONTHLY_GOAL = p;
+  localStorage.setItem('atp_goal',       p);
+  localStorage.setItem('atp_goal_leads', l);
+  localStorage.setItem('atp_goal_spend', s);
+  updateGoalCard(calcMonthlyProfit());
+  closeGoals();
+  toast('✅ Goals saved — monthly profit target $' + p.toLocaleString());
+}
+
+function updateGoalCard(monthProfit){
+  const card = document.getElementById('goalCard');
+  if(!card||!hasAnyConn()) return;
+  card.style.display = 'flex';
+
+  const pct     = Math.min(monthProfit / MONTHLY_GOAL * 100, 100);
+  const rem     = Math.max(MONTHLY_GOAL - monthProfit, 0);
+  const fmt     = n => '$'+n.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+
+  /* month label */
+  const mn = ['January','February','March','April','May','June','July','August',
+               'September','October','November','December'];
+  document.getElementById('goalMonth').textContent  = mn[TODAY.getMonth()]+' '+TODAY.getFullYear();
+  document.getElementById('goalBar').style.width    = pct.toFixed(2)+'%';
+  document.getElementById('goalPct').textContent    = pct.toFixed(1)+'%';
+  document.getElementById('goalCur').textContent    = fmt(monthProfit);
+  document.getElementById('goalTargetLbl').textContent = fmt(MONTHLY_GOAL);
+  document.getElementById('goalRemSpan').textContent   = rem > 0 ? `— ${fmt(rem)} remaining` : '— 🎉 Goal reached!';
+
+  /* colour the bar based on pace */
+  const bar = document.getElementById('goalBar');
+  const dayOfMonth = TODAY.getDate(), daysInMonth = new Date(TODAY.getFullYear(), TODAY.getMonth()+1, 0).getDate();
+  const expectedPct = (dayOfMonth / daysInMonth) * 100;
+  if(pct >= expectedPct) bar.style.background = 'linear-gradient(90deg,var(--gr),var(--bl))';
+  else if(pct >= expectedPct * 0.7) bar.style.background = 'linear-gradient(90deg,var(--ye),var(--or))';
+  else bar.style.background = 'linear-gradient(90deg,var(--pu),var(--bl))';
+}
+
+function promptSpend(){
+  const multi      = isMultiDay(curRange);
+  const rangeLabel = RANGE_CFG[curRange] ? RANGE_CFG[curRange].label : 'Selected Period';
+  const acctLabel  = filterDC && NETS[filterDC] ? NETS[filterDC].name : 'All Accounts';
+  const spKey      = currentSpendKey();
+  const cur        = spendStore.hasOwnProperty(spKey) ? spendStore[spKey]
+    : (filterDC ? 0 : multi ? (RANGE_DATA?.spend||0) : (LIVE_DATA.spend||allData[dkey(curDate)]?.spend||0));
+  const val = prompt(`Enter Total Spend\n${rangeLabel} · ${acctLabel} (USD):`, cur.toFixed(2));
+  if(val === null) return;
+  const n = parseFloat(val.replace(/[^0-9.]/g,''));
+  if(!isFinite(n) || n < 0){ toast('Invalid amount','err'); return; }
+  /* persist in unified store */
+  spendStore[spKey] = n;
+  saveSpendStore();
+  /* keep in-memory objects in sync for net-profit calculations */
+  if(multi){
+    if(RANGE_DATA) RANGE_DATA.spend = n;
+  } else {
+    if(!filterDC) LIVE_DATA.spend = n;
+    const ck = dkey(curDate);
+    if(!allData[ck]) allData[ck] = { spend:0, income:0, leads:{total:0,approved:0,rejected:0,trash:0,hold:0}, drCash:[], topOffers:[] };
+    allData[ck].spend = n;
+    saveData();
+  }
+  renderDashboard();
+  toast(`✅ Spend $${n.toFixed(2)} saved · ${rangeLabel} · ${acctLabel}`);
+}
+
+function calcMonthlyProfit(){
+  /* income: Dr.Cash API already returns cumulative month-to-date total in LIVE_DATA.monthlyProfit */
+  const monthlyIncome = LIVE_DATA.monthlyProfit || LIVE_DATA.income || 0;
+  /* spend: iterate every day from the 1st to today and sum stored entries */
+  const todayKey   = dkey(TODAY);
+  const monthStart = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
+  const acct       = filterDC || 'all';
+  let monthlySpend = 0;
+  const cur = new Date(monthStart);
+  while(dkey(cur) <= todayKey){
+    const k  = dkey(cur);
+    const sk = k + ':' + acct;
+    const isToday = k === todayKey;
+    monthlySpend += spendStore.hasOwnProperty(sk)
+      ? spendStore[sk]
+      : (isToday ? (LIVE_DATA.spend || allData[k]?.spend || 0) : (allData[k]?.spend || 0));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return monthlyIncome - monthlySpend;
+}
+
+function editGoal(){ openGoals(); }
+
+/* ── LIVE_DATA: updated by fetchLiveData() — defaults show until API responds ── */
+const LIVE_DATA = {
+  spend:   0.00,
+  income:  0.00,
+  balance: 0.00,
+  pending: 0.00,
+  leads:   { total: 0, approved: 0, rejected: 0, trash: 0, hold: 0 },
+  drCash:  [],
+  topOffers: [],
+  monthlyProfit: 0.00
+};
+
+const YESTERDAY_LIVE = {
+  spend:  0.00,
+  income: 0.00,
+  leads:  { total: 0, approved: 0, rejected: 0, trash: 0, hold: 0 }
+};
+
+/* pill→network mapping (which nets "count" for each header pill) */
+const PILL_MAP = {
+  btnTT:   ['tiktok'],
+  btnMeta: ['meta1','meta2','meta3'],
+  btnDC:   ['drcash1','drcash2','drcash3'],
+};
+
+/* ════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════ */
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const TODAY  = new Date(); /* always today */
+let curDate  = new Date(TODAY);
+
+/* Date range state */
+const RANGE_CFG = {
+  today:     { label:'Today' },
+  yesterday: { label:'Yesterday' },
+  last7:     { label:'Last 7 Days' },
+  last30:    { label:'Last 30 Days' },
+  thismonth: { label:'This Month' },
+  lastmonth: { label:'Last Month' },
+  alltime:   { label:'All Time' },
+};
+let curRange  = 'today'; /* active range key */
+let RANGE_DATA = null;   /* aggregated data for current multi-day range */
+let filterDC  = null;    /* null=all accounts aggregated | 'drcash1'/'drcash2'/'drcash3'=single account view */
+
+/* when user comes back to tab after midnight, re-sync to today */
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible'){
+    const realToday = new Date();
+    if(dkey(realToday) !== dkey(TODAY)){
+      location.reload(); /* new day → reload so TODAY updates */
+    } else if(dkey(curDate) !== dkey(TODAY)){
+      curDate = new Date(TODAY);
+      renderDashboard();
+    }
+  }
+});
+let allData    = {};
+let spendStore = {};  /* { 'rangeOrDate:accountOrAll': amount } — e.g. '2026-04-26:all', 'last7:drcash1' */
+let conns    = {};   /* { netId: { token, connectedAt } } */
+let curNet   = null; /* currently open modal's netId */
+function hasAnyConn(){ return getDCTokens().length > 0 || !!(conns['adcombo'] && conns['adcombo'].token); }
+
+/* ── persistence ── */
+function loadAll(){
+  try{ const r=localStorage.getItem('atp_v4');       if(r) allData=JSON.parse(r); }catch{}
+  try{ const r=localStorage.getItem('atp_conns');    if(r) conns=JSON.parse(r); }catch{}
+  try{ const r=localStorage.getItem('atp_spend_v2'); if(r) spendStore=JSON.parse(r); }catch{}
+  /* migrate atp_spend (v1 rangeSpend with no account info) → insert as ':all' entries */
+  try{
+    const old=localStorage.getItem('atp_spend');
+    if(old){
+      const od=JSON.parse(old);
+      let changed=false;
+      Object.entries(od).forEach(([k,v])=>{
+        if(typeof v==='number' && !spendStore.hasOwnProperty(k+':all')){
+          spendStore[k+':all']=v; changed=true;
+        }
+      });
+      if(changed) localStorage.setItem('atp_spend_v2',JSON.stringify(spendStore));
+      localStorage.removeItem('atp_spend');
+    }
+  }catch{}
+}
+function saveData(){ localStorage.setItem('atp_v4',JSON.stringify(allData)); }
+function saveConns(){ localStorage.setItem('atp_conns',JSON.stringify(conns)); }
+function saveSpendStore(){ localStorage.setItem('atp_spend_v2',JSON.stringify(spendStore)); }
+
+/* ── utils ── */
+function dkey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function fdate(d){ return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`; }
+/* spend key encodes both the date/range AND the current account filter */
+function currentSpendKey(){ return (isMultiDay(curRange) ? curRange : dkey(curDate)) + ':' + (filterDC||'all'); }
+function fmoney(n){ return (n==null||!isFinite(n)||isNaN(n))?'--':'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function sdiv(a,b){ return (a===0||b===0||!isFinite(a)||!isFinite(b))?'--':fmoney(a/b); }
+function maskToken(t){ return t.length<=8?'••••••••':t.slice(0,4)+'••••••••••••'+t.slice(-4); }
+function mkChg(cur,prev){
+  if(prev==null||prev===0||cur==null||!isFinite(cur)||!isFinite(prev)) return '';
+  const pct=((cur-prev)/Math.abs(prev)*100);
+  if(Math.abs(pct)<0.1) return '<span class="chg chg-flat">→ 0%</span>';
+  const up=pct>0;
+  return `<span class="chg ${up?'chg-up':'chg-dn'}">${up?'↑':'↓'} ${Math.abs(pct).toFixed(1)}%</span>`;
+}
+
+/* ════════════════════════════════════════════
+   MODAL LOGIC
+════════════════════════════════════════════ */
+function openModal(netId){
+  curNet = netId;
+  const net  = NETS[netId];
+  const conn = conns[netId];
+
+  /* style header gradient */
+  document.getElementById('mHead').style.background = net.headBg;
+  /* icon */
+  const icon = document.getElementById('mIcon');
+  icon.textContent = net.icon;
+  icon.style.background  = net.iconBg;
+  icon.style.boxShadow   = `0 0 36px ${net.iconGlow}, inset 0 1px 0 rgba(255,255,255,.12)`;
+
+  document.getElementById('mName').textContent = net.name;
+  document.getElementById('mHint').innerHTML   = net.hint;
+
+  const badge   = document.getElementById('mBadge');
+  const preview = document.getElementById('mPreview');
+  const disconn = document.getElementById('mDisconn');
+  const inp     = document.getElementById('mToken');
+  const btn     = document.getElementById('mConnectBtn');
+
+  inp.type  = 'password';
+  document.getElementById('mEye').textContent = '👁';
+
+  /* show/hide TikTok Advertiser ID field */
+  const advWrap = document.getElementById('mAdvIdWrap');
+  const advInp  = document.getElementById('mAdvId');
+  if(netId === 'tiktok'){
+    advWrap.style.display = 'block';
+    advInp.value = conn ? (conn.advertiserId || '') : '';
+    advInp.placeholder = 'e.g. 7224063951129018370';
+  } else {
+    advWrap.style.display = 'none';
+    advInp.value = '';
+  }
+
+  if(conn){
+    /* already connected */
+    document.getElementById('mSub').textContent = 'Already connected — update or disconnect below';
+    badge.classList.add('show');
+    preview.textContent = 'Saved token: ' + maskToken(conn.token);
+    preview.classList.add('show');
+    disconn.classList.add('show');
+    inp.value       = '';
+    inp.placeholder = 'Enter new token to update…';
+    btn.textContent = 'Update Token →';
+  } else {
+    /* not connected */
+    document.getElementById('mSub').textContent = 'Connect your account';
+    badge.classList.remove('show');
+    preview.classList.remove('show');
+    disconn.classList.remove('show');
+    inp.value       = '';
+    inp.placeholder = 'Paste your API token here…';
+    btn.textContent = 'Connect →';
+  }
+
+  /* highlight the sidebar item as active */
+  const el = document.querySelector(`.platform-item[data-net="${netId}"]`);
+  if(el){
+    el.closest('.sb-section').querySelectorAll('.platform-item').forEach(p=>p.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  document.getElementById('mOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('mToken').focus(), 340);
+}
+
+function overlayClick(e){
+  if(e.target === document.getElementById('mOverlay')) closeModal();
+}
+
+function closeModal(){
+  document.getElementById('mOverlay').classList.remove('open');
+  document.getElementById('mToken').value = '';
+  curNet = null;
+}
+
+function connectNet(){
+  const inp   = document.getElementById('mToken');
+  const token = inp.value.trim();
+
+  if(!token){
+    inp.classList.add('err-border','shake');
+    setTimeout(()=>inp.classList.remove('err-border','shake'), 700);
+    return;
+  }
+
+  /* for TikTok, also save the Advertiser ID */
+  if(curNet === 'tiktok'){
+    const advId = document.getElementById('mAdvId').value.trim() || (conns['tiktok']||{}).advertiserId || '';
+    conns[curNet] = { token, advertiserId: advId, connectedAt: Date.now() };
+  } else {
+    conns[curNet] = { token, connectedAt: Date.now() };
+  }
+  saveConns();
+  updateConnUI();
+  const name = NETS[curNet].name;
+  closeModal();
+  toast(`✅ ${name} connected — fetching live data…`);
+  /* trigger appropriate live fetch */
+  if(curNet === 'tiktok'){
+    fetchTikTokData().then(s=>{ LIVE_DATA.spend=s; renderDashboard(); });
+  } else if(getDCTokens().length){
+    fetchLiveData();
+  } else {
+    renderDashboard();
+  }
+}
+
+function disconnectNet(){
+  if(!curNet) return;
+  const name = NETS[curNet].name;
+  delete conns[curNet];
+  saveConns();
+  updateConnUI();
+  renderDashboard();
+  closeModal();
+  toast(`🔌 ${name} disconnected`, 'err');
+}
+
+/* ════════════════════════════════════════════
+   API SETTINGS PAGE
+════════════════════════════════════════════ */
+function openSettings(){
+  renderSettings();
+  document.getElementById('settingsOv').classList.add('open');
+}
+function closeSettings(){
+  document.getElementById('settingsOv').classList.remove('open');
+}
+function settingsEditNet(netId){
+  closeSettings();
+  setTimeout(()=>openModal(netId), 180);
+}
+function settingsDeleteNet(netId){
+  const name = NETS[netId]?.name || netId;
+  if(!confirm(`Disconnect ${name}?\n\nThis will remove the saved token. You can reconnect anytime.`)) return;
+  delete conns[netId];
+  /* if a DC filter was active for the deleted account, clear it */
+  if(filterDC === netId){ filterDC = null; LIVE_DATA.income=0;LIVE_DATA.leads={total:0,approved:0,rejected:0,trash:0,hold:0};LIVE_DATA.drCash=[];RANGE_DATA=null; }
+  saveConns();
+  updateConnUI();
+  renderDashboard();
+  renderSettings();
+  toast(`🔌 ${name} disconnected`, 'err');
+}
+function renderSettings(){
+  const body = document.getElementById('settingsBody');
+  if(!body) return;
+  const fmtDate = ts => {
+    if(!ts) return null;
+    return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  };
+  const groups = [
+    { label:'Ad Platforms',  nets:['tiktok','meta1','meta2','meta3'] },
+    { label:'CPA Networks',  nets:['drcash1','drcash2','drcash3','adcombo'] },
+  ];
+  body.innerHTML = groups.map(g=>`
+    <div class="settings-sec">
+      <div class="settings-sec-lbl">${g.label}</div>
+      ${g.nets.map(id=>{
+        const net  = NETS[id];
+        const conn = conns[id];
+        const ok   = !!(conn && conn.token);
+        const iconSty = `background:${net.iconBg};box-shadow:0 0 18px ${net.iconGlow}`;
+        const tokenTxt = ok ? maskToken(conn.token) : '—';
+        const advLine  = (ok && id==='tiktok' && conn.advertiserId)
+          ? `<div class="api-card-meta">Advertiser ID: ${conn.advertiserId}</div>` : '';
+        const since    = ok && conn.connectedAt ? `<div class="api-card-since">Connected ${fmtDate(conn.connectedAt)}</div>` : '';
+        const btns = ok
+          ? `<button class="api-btn api-btn-edit"    onclick="settingsEditNet('${id}')">✏️ Edit</button>
+             <button class="api-btn api-btn-refresh" onclick="settingsEditNet('${id}')">🔄 Refresh</button>
+             <button class="api-btn api-btn-delete"  onclick="settingsDeleteNet('${id}')">🗑 Delete</button>`
+          : `<button class="api-btn api-btn-connect" onclick="settingsEditNet('${id}')">🔌 Connect</button>`;
+        return `<div class="api-card ${ok?'is-conn':''}">
+          <div class="api-card-icon" style="${iconSty}">${net.icon}</div>
+          <div class="api-card-info">
+            <div class="api-card-name">${net.name}</div>
+            <div class="api-card-status ${ok?'on':'off'}">${ok?'● Connected':'○ Disconnected'}</div>
+            <div class="api-card-meta">Token: ${tokenTxt}</div>
+            ${advLine}${since}
+          </div>
+          <div class="api-card-btns">${btns}</div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+function toggleVis(){
+  const inp = document.getElementById('mToken');
+  const eye = document.getElementById('mEye');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  eye.textContent = inp.type === 'password' ? '👁' : '🙈';
+}
+
+/* ── Dr.Cash per-account filter ── */
+function dcItemClick(netId, e){
+  /* gear button is handled by its own stopPropagation + openModal inline */
+  const isConnected = !!(conns[netId] && conns[netId].token);
+  if(!isConnected){ openModal(netId); return; }
+
+  /* toggle: click active account → back to all; click other → switch to it */
+  filterDC = (filterDC === netId) ? null : netId;
+  /* full LIVE_DATA wipe — every field — so no stale values from the previous account bleed through */
+  LIVE_DATA.income = 0; LIVE_DATA.balance = 0; LIVE_DATA.pending = 0; LIVE_DATA.monthlyProfit = 0;
+  LIVE_DATA.leads  = {total:0,approved:0,rejected:0,trash:0,hold:0};
+  LIVE_DATA.drCash = []; LIVE_DATA.topOffers = []; LIVE_DATA.spend = 0;
+  RANGE_DATA = null;
+  updateConnUI();
+  renderDashboard(); /* show cleared state immediately — user sees zeros, not stale data, while fetch runs */
+  const hasDC = getDCTokens().length > 0;
+  const hasAC = !filterDC && !!(conns['adcombo'] && conns['adcombo'].token);
+  if(hasDC || hasAC){
+    fetchLiveData();
+  }
+  if(filterDC){
+    const name = NETS[filterDC] ? NETS[filterDC].name : filterDC;
+    toast(`Viewing ${name} only — click again to show all`);
+  } else {
+    toast('Showing all Dr.Cash accounts combined');
+  }
+}
+
+function clearDCFilter(){
+  filterDC = null;
+  LIVE_DATA.income = 0; LIVE_DATA.balance = 0; LIVE_DATA.pending = 0;
+  LIVE_DATA.leads  = {total:0,approved:0,rejected:0,trash:0,hold:0};
+  LIVE_DATA.drCash = []; LIVE_DATA.topOffers = [];
+  RANGE_DATA = null;
+  updateConnUI();
+  renderDashboard(); /* show cleared/stored state immediately while fetch runs */
+  const hasDC     = getDCTokens().length > 0;
+  const hasAC     = !!(conns['adcombo'] && conns['adcombo'].token);
+  if(hasDC || hasAC) fetchLiveData();
+}
+
+/* ── update all UI that reflects connection state ── */
+function updateConnUI(){
+  /* live badge in header */
+  const lb=document.getElementById('liveBadge');
+  if(lb) lb.classList.toggle('show', hasAnyConn());
+
+  /* sidebar items — connected state + active filter highlight */
+  document.querySelectorAll('.platform-item[data-net]').forEach(el=>{
+    const id = el.dataset.net;
+    el.classList.toggle('connected', !!(conns[id] && conns[id].token));
+    el.classList.toggle('dc-active',  filterDC && id === filterDC);
+  });
+
+  /* filter banner */
+  const banner = document.getElementById('dcFilterBanner');
+  const lbl    = document.getElementById('dcFilterLabel');
+  if(banner){
+    banner.classList.toggle('show', !!filterDC);
+    if(filterDC && lbl) lbl.textContent = NETS[filterDC] ? NETS[filterDC].name : filterDC;
+  }
+
+  /* header pills */
+  Object.entries(PILL_MAP).forEach(([btnId, netIds])=>{
+    const anyConn = netIds.some(id=>conns[id]);
+    const btn = document.getElementById(btnId);
+    if(!btn) return;
+    btn.classList.toggle('conn', anyConn);
+    /* green dot inside pill */
+    const dotId = {btnTT:'ttDot', btnMeta:'metaDot', btnDC:'dcDot'}[btnId];
+    const dotEl = document.getElementById(dotId);
+    if(dotEl){
+      dotEl.className = anyConn ? 'hdr-conn-dot' : '';
+    }
+  });
+}
+
+/* ════════════════════════════════════════════
+   DASHBOARD DATA + RENDER
+════════════════════════════════════════════ */
+const anims={};
+function animTo(id,end,decimals=0,prefix=''){
+  cancelAnimationFrame(anims[id]);
+  const el=document.getElementById(id); if(!el) return;
+  const start=parseFloat(el.dataset.cur||'0')||0;
+  const dur=700, t0=performance.now();
+  const tick=(now)=>{
+    const p=Math.min((now-t0)/dur,1), e=1-Math.pow(1-p,3), v=start+(end-start)*e;
+    el.textContent=prefix+(decimals>0?v.toFixed(decimals):Math.round(v).toLocaleString());
+    if(p<1) anims[id]=requestAnimationFrame(tick);
+    else{ el.dataset.cur=end; el.textContent=prefix+(decimals>0?end.toFixed(decimals):Math.round(end).toLocaleString()); }
+  };
+  anims[id]=requestAnimationFrame(tick);
+}
+
+function relLabel(){
+  const tk=dkey(TODAY), ck=dkey(curDate);
+  if(ck===tk) return 'Today';
+  const diff=Math.round((curDate-TODAY)/86400000);
+  if(diff===-1) return 'Yesterday';
+  if(diff===1)  return 'Tomorrow';
+  return diff<0?'Past':'Future';
+}
+
+function renderBreakdown(accs){
+  document.getElementById('brkContainer').innerHTML=accs.map((a,i)=>`
+    <div class="brk-card">
+      <div class="brk-header">
+        <span class="acc-tag">Account #${i+1}</span>
+        <span class="acc-name">${a.name}</span>
+      </div>
+      <div class="brk-stats">
+        <div class="brk-stat"><div class="brk-stat-lbl">Revenue</div><div class="brk-stat-val bsv-gr">${fmoney(a.revenue)}</div></div>
+        <div class="brk-stat"><div class="brk-stat-lbl">Leads</div><div class="brk-stat-val bsv-bl">${a.leads}</div></div>
+        <div class="brk-stat"><div class="brk-stat-lbl">Approved</div><div class="brk-stat-val bsv-gr">${a.approved}</div></div>
+        <div class="brk-stat"><div class="brk-stat-lbl">Rejected</div><div class="brk-stat-val bsv-re">${a.rejected||0}</div></div>
+        <div class="brk-stat brk-stat-trash"><div class="brk-stat-lbl">Trash</div><div class="brk-stat-val bsv-or">${a.trash}</div></div>
+        <div class="brk-stat"><div class="brk-stat-lbl">Hold</div><div class="brk-stat-val bsv-ye">${a.hold}</div></div>
+      </div>
+    </div>`).join('');
+}
+
+const RCLS=['r1','r2','r3','r4','r5'],RICO=['🥇','🥈','🥉','4','5'];
+function renderOffers(offers){
+  const el = document.getElementById('offersContainer');
+  if(!offers||!offers.length){
+    el.innerHTML='<div style="color:var(--t3);font-size:13px;padding:16px 0">No offer data yet — click Refresh Live Data</div>';
+    return;
+  }
+  el.innerHTML=offers.slice(0,5).map((o,i)=>`
+    <div class="offer-item">
+      <div class="o-rank ${RCLS[i]}">${i===0?'🏆':i+1}</div>
+      <div class="o-info">
+        <div class="o-name">${o.name}</div>
+        <div class="o-tags"><span class="o-tag ${o.net==='ADCOMBO'?'tag-ac':'tag-dc'}">${o.net||'DR.CASH'}</span></div>
+      </div>
+      <div class="o-right">
+        <div class="o-inline-stats">
+          ${o.leads} leads &nbsp;·&nbsp; <span class="osg">${o.approved} ✓</span> &nbsp;·&nbsp; <span class="osy">${o.hold} hold</span>
+        </div>
+        <div class="o-earn">${fmoney(o.earn)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderDashboard(){
+  const multi   = isMultiDay(curRange);
+  const ck      = dkey(curDate);
+  const isToday = (ck === dkey(TODAY));
+
+  /* ── date card display ── */
+  if(!multi){
+    document.getElementById('dateVal').textContent = fdate(curDate);
+    document.getElementById('dateRel').textContent = relLabel();
+  }
+  /* (multi-day date card is set by updateRangeDateCard inside selectRange) */
+
+  /* ── resolve data source ── */
+  let d = null;
+  if(multi){
+    if(RANGE_DATA){
+      d = {
+        spend:  RANGE_DATA.spend  || 0,
+        income: RANGE_DATA.income || 0,
+        balance:0, pending:0,
+        leads:{ total:RANGE_DATA.total||0, approved:RANGE_DATA.approved||0,
+                rejected:RANGE_DATA.rejected||0, trash:RANGE_DATA.trash||0, hold:RANGE_DATA.hold||0 },
+        drCash:   RANGE_DATA.drCash    || [],
+        topOffers:RANGE_DATA.topOffers || [],
+      };
+    } else {
+      d = null; /* loading */
+    }
+  } else if(isToday && hasAnyConn()){
+    const liveHasData = LIVE_DATA.income > 0 || LIVE_DATA.leads.total > 0 || LIVE_DATA.balance > 0;
+    /* When a single account is selected, always use LIVE_DATA (even zeros) — never fall back to
+       stored allData which belongs to a different account (drcash1's previously saved snapshot). */
+    d = (filterDC || liveHasData) ? LIVE_DATA : (allData[ck] || LIVE_DATA);
+  } else {
+    d = allData[ck] || null;
+  }
+  if(!d && isToday && !multi) d={spend:0,income:0,leads:{total:0,approved:0,rejected:0,trash:0,hold:0},drCash:[],topOffers:[]};
+
+  const sections=['mainContent','leadsGrid','costGrid','div1','brkSection','offersSection','div2'];
+  /* hide single-day entry form in multi-day view */
+  const inputSec = document.querySelector('.input-sec');
+  if(inputSec) inputSec.style.display = multi ? 'none' : '';
+  if(!d){
+    document.getElementById('noData').classList.add('show');
+    const noTxt = multi
+      ? `No data for ${RANGE_CFG[curRange].label} — connect Dr.Cash to load`
+      : `No data for ${fdate(curDate)}`;
+    document.getElementById('noDataText').textContent = noTxt;
+    sections.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+    return;
+  }
+  document.getElementById('noData').classList.remove('show');
+  sections.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';});
+
+  /* spend: prefer manually-saved value for this exact range+account; fall back only for all-accts */
+  const _spKey = currentSpendKey();
+  const sp = spendStore.hasOwnProperty(_spKey)
+    ? spendStore[_spKey]
+    : (filterDC ? 0 : (d.spend || 0));
+  const inc=d.income, pr=inc-sp, roi=sp>0?(pr/sp)*100:0, l=d.leads;
+
+  document.getElementById('mSpend').dataset.cur='0';
+  animTo('mSpend',sp,2,'$');
+  {
+    const acctLbl = filterDC && NETS[filterDC] ? NETS[filterDC].name : null;
+    const hasEntry = spendStore.hasOwnProperty(_spKey) && spendStore[_spKey] > 0;
+    let sub;
+    if(multi)        sub = hasEntry ? `${RANGE_CFG[curRange].label} · tap ✏️ to edit` : 'Tap ✏️ to enter spend';
+    else if(acctLbl) sub = hasEntry ? `${acctLbl} · tap ✏️ to edit` : `${acctLbl} · tap ✏️ to enter`;
+    else             sub = `TikTok $${sp.toFixed(0)}`;
+    document.getElementById('mSpendSub').textContent = sub;
+  }
+
+  document.getElementById('mIncome').dataset.cur='0';
+  animTo('mIncome',inc,2,'$');
+
+  const prEl=document.getElementById('mProfit');
+  prEl.dataset.cur='0';
+  prEl.className=`m-value ${pr>=0?'v-gr':'v-re'}`;
+  const prSign=pr<0?'-':'', prAbs=Math.abs(pr), t0=performance.now();
+  cancelAnimationFrame(anims['mProfit']);
+  const ptick=(now)=>{
+    const p=Math.min((now-t0)/700,1),e=1-Math.pow(1-p,3);
+    prEl.textContent=prSign+'$'+(prAbs*e).toFixed(2);
+    if(p<1) anims['mProfit']=requestAnimationFrame(ptick);
+    else prEl.textContent=prSign+'$'+prAbs.toFixed(2);
+  };
+  anims['mProfit']=requestAnimationFrame(ptick);
+
+  document.getElementById('mRoi').innerHTML=`ROI: <span class="${roi>=0?'c-green':'c-red'}">${roi.toFixed(1)}%</span>`;
+
+  ['lTotal','lApproved','lRejected','lTrash','lHold'].forEach(id=>document.getElementById(id).dataset.cur='0');
+  animTo('lTotal',l.total,0); animTo('lApproved',l.approved,0);
+  animTo('lRejected',l.rejected||0,0); animTo('lTrash',l.trash,0); animTo('lHold',l.hold,0);
+
+  const pct=(n,t)=>t>0?`${Math.round(n/t*100)}%`:'';
+  const apPct=document.getElementById('lApprovedPct'); if(apPct) apPct.textContent=pct(l.approved,l.total);
+  const rePct=document.getElementById('lRejectedPct'); if(rePct) rePct.textContent=pct(l.rejected||0,l.total);
+  const trPct=document.getElementById('lTrashPct'); if(trPct) trPct.textContent=pct(l.trash,l.total);
+  const hoPct=document.getElementById('lHoldPct'); if(hoPct) hoPct.textContent=pct(l.hold,l.total);
+
+  const incSub=document.getElementById('mIncomeSub');
+  if(incSub){
+    const dcAcctLabel = filterDC && NETS[filterDC] ? ` · ${NETS[filterDC].name} only` : ' · All Networks';
+    if(multi) incSub.textContent=`📊 ${RANGE_CFG[curRange].label}${dcAcctLabel}`;
+    else      incSub.textContent=(hasAnyConn()&&isToday)?`🟢 Live${dcAcctLabel}`:'Dr.Cash + AdCombo';
+  }
+  /* balance + goal only make sense for today's single-day view */
+  if(!multi&&hasAnyConn()&&isToday&&d.balance!=null) updateBalanceCard(d.balance||0, d.pending||0);
+  if(!multi&&hasAnyConn()&&isToday) updateGoalCard(calcMonthlyProfit());
+
+  document.getElementById('cCPL').textContent=sdiv(sp,l.total);
+  document.getElementById('cCPA').textContent=sdiv(sp,l.approved);
+  document.getElementById('cCPH').textContent=sdiv(sp,l.hold);
+  document.getElementById('cCPT').textContent=sdiv(sp,l.trash);
+
+  /* ── change arrows — only for single-day today comparison ── */
+  const sc=(id,c,p)=>{const el=document.getElementById(id);if(el)el.innerHTML=multi?'':mkChg(c,p);};
+  const yest=(!multi&&hasAnyConn()&&isToday)?YESTERDAY_LIVE:null;
+  sc('chgSpend',   sp,  yest&&yest.spend);
+  sc('chgIncome',  inc, yest&&yest.income);
+  sc('chgProfit',  pr,  yest&&(yest.income-yest.spend));
+  sc('chgTotal',   l.total,         yest&&yest.leads.total);
+  sc('chgApproved',l.approved,      yest&&yest.leads.approved);
+  sc('chgRejected',l.rejected||0,   yest&&yest.leads.rejected);
+  sc('chgTrash',   l.trash,         yest&&yest.leads.trash);
+  sc('chgHold',    l.hold,          yest&&yest.leads.hold);
+  const yl=yest&&yest.leads;
+  sc('chgCPL',l.total?sp/l.total:null,       yl&&yl.total?yest.spend/yl.total:null);
+  sc('chgCPA',l.approved?sp/l.approved:null, yl&&yl.approved?yest.spend/yl.approved:null);
+  sc('chgCPH',l.hold?sp/l.hold:null,         yl&&yl.hold?yest.spend/yl.hold:null);
+  sc('chgCPT',l.trash?sp/l.trash:null,       yl&&yl.trash?yest.spend/yl.trash:null);
+
+  renderBreakdown(d.drCash||[]);
+  renderOffers(d.topOffers||[]);
+
+  /* pre-fill Update Day Data fields with current live values */
+  if(!multi){
+    const spInp = document.getElementById('inSpend');
+    const incInp = document.getElementById('inIncome');
+    if(spInp && !spInp.matches(':focus'))  spInp.placeholder  = sp>0  ? sp.toFixed(2)  : '0.00';
+    if(incInp && !incInp.matches(':focus')) incInp.placeholder = inc>0 ? inc.toFixed(2) : '0.00';
+  }
+}
+
+/* ════════════════════════════════════════════
+   ACTIONS
+════════════════════════════════════════════ */
+function changeDate(delta){
+  RANGE_DATA = null;
+  curDate = new Date(curDate);
+  curDate.setDate(curDate.getDate()+delta);
+  const ck = dkey(curDate);
+  curRange = ck===dkey(TODAY) ? 'today' :
+             ck===dkey(new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()-1)) ? 'yesterday' : 'custom';
+  /* sync calendar pick to match */
+  calPickStart = new Date(curDate.getFullYear(), curDate.getMonth(), curDate.getDate());
+  calPickEnd   = null;
+  renderDashboard();
+}
+function saveDay(){
+  const sRaw = document.getElementById('inSpend').value;
+  const iRaw = document.getElementById('inIncome').value;
+  /* if income field empty, use live data income (from Dr.Cash API) */
+  const s   = sRaw==='' ? (LIVE_DATA.spend||0) : parseFloat(sRaw);
+  const inc = iRaw==='' ? (LIVE_DATA.income||0) : parseFloat(iRaw);
+  if(isNaN(s)||isNaN(inc)||s<0||inc<0){ toast('Please enter valid values','err'); return; }
+  const ck=dkey(curDate);
+  const base=allData[ck]||(hasAnyConn()?{...LIVE_DATA}:{spend:0,income:0,leads:{total:0,approved:0,rejected:0,trash:0,hold:0},drCash:[],topOffers:[]});
+  const ex={...base};
+  ex.spend=s; ex.income=inc; allData[ck]=ex; saveData();
+  /* persist spend in unified store for the current date + account */
+  spendStore[currentSpendKey()] = s;
+  saveSpendStore();
+  renderDashboard();
+  document.getElementById('inSpend').value='';
+  document.getElementById('inIncome').value='';
+  toast(`✅ Saved — Spend $${s.toFixed(2)} · Income $${inc.toFixed(2)}`);
+}
+function setNav(el,title){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active'); document.getElementById('pageTitle').textContent=title;
+}
+function syncCloud(){
+  toast('☁️ Syncing to cloud…');
+  setTimeout(()=>toast('✅ Cloud sync complete!'),1500);
+}
+function exportCSV(){
+  const ck=dkey(curDate), d=allData[ck];
+  if(!d){ toast('No data to export','err'); return; }
+  const sp=d.spend,inc=d.income,pr=inc-sp,roi=sp>0?((pr/sp)*100).toFixed(1)+'%':'0%',l=d.leads;
+  const rows=[
+    ['Date','Spend','Income','Profit','ROI','Leads','Approved','Rejected','Trash','Hold','CPL','CPA','CPT'],
+    [fdate(curDate),sp.toFixed(2),inc.toFixed(2),pr.toFixed(2),roi,l.total,l.approved,l.rejected||0,l.trash,l.hold,
+     l.total?(sp/l.total).toFixed(2):'--', l.approved?(sp/l.approved).toFixed(2):'--',
+     l.trash?(sp/l.trash).toFixed(2):'--']
+  ];
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'}));
+  a.download=`aff-tracker-${ck}.csv`; a.click();
+  toast('📥 CSV exported successfully!');
+}
+
+let tid=0;
+function toast(msg,type='ok'){
+  const id=++tid, el=document.createElement('div');
+  el.className=`toast ${type}`; el.textContent=msg;
+  document.getElementById('toastWrap').appendChild(el);
+  setTimeout(()=>{ el.style.cssText='animation:none;opacity:0;transform:translateX(20px);transition:all .3s';
+    setTimeout(()=>el.remove(),300); }, 3500);
+}
+
+/* keyboard shortcuts */
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') closeModal();
+  if(e.key==='Enter'){
+    if(document.getElementById('mOverlay').classList.contains('open')) connectNet();
+    else if(e.target.id==='inSpend'||e.target.id==='inIncome') saveDay();
+  }
+});
+
+/* ════════════════════════════════════════════
+   TIKTOK ADS API  (routed via CORS proxy)
+════════════════════════════════════════════ */
+const TT_API   = 'https://business-api.tiktok.com/open_api/v1.3';
+const TT_PROXY = 'https://corsproxy.io/?';   /* free CORS proxy */
+
+async function fetchTikTokData(){
+  const ttConn = conns['tiktok'];
+  if(!ttConn || !ttConn.token) return 0;
+  const token        = ttConn.token;
+  const advertiserId = ttConn.advertiserId || '';
+  const today        = dkey(TODAY);
+
+  if(!advertiserId){
+    console.warn('[TikTok] no advertiser ID configured');
+    return 0;
+  }
+
+  /* try direct first, then fall back to proxy */
+  const endpoints = [
+    TT_API + '/report/integrated/get/',
+    TT_PROXY + encodeURIComponent(TT_API + '/report/integrated/get/')
+  ];
+
+  const body = JSON.stringify({
+    advertiser_id: advertiserId,
+    report_type:   'BASIC',
+    dimensions:    ['stat_time_day'],
+    metrics:       ['spend', 'cash_spend'],
+    start_date:    today,
+    end_date:      today,
+    page: 1, page_size: 50
+  });
+
+  for(const url of endpoints){
+    try {
+      const resp = await fetch(url, {
+        method:  'POST',
+        headers: { 'Access-Token': token, 'Content-Type': 'application/json' },
+        body
+      });
+      const data = await resp.json();
+      console.log('[TikTok report via', url.includes('proxy')?'proxy':'direct',']', data);
+
+      /* error code from TikTok */
+      if(data.code && data.code !== 0){
+        console.warn('[TikTok API error]', data.code, data.message);
+        return 0; /* silent — TikTok token likely expired, use manual spend */
+      }
+
+      const rows  = ((data.data || {}).list || []);
+      const spend = rows.reduce((s, r) => {
+        const m = r.metrics || {};
+        return s + parseFloat(m.spend || m.cash_spend || 0);
+      }, 0);
+      console.log('[TikTok spend today]', spend);
+      return spend;
+
+    } catch(err){
+      console.warn('[TikTok] attempt failed:', err.message);
+      /* try next endpoint */
+    }
+  }
+
+  console.warn('[TikTok] all endpoints failed — use manual spend entry');
+  return 0;
+}
+
+/* ════════════════════════════════════════════
+   LIVE FETCH FROM DR.CASH API
+════════════════════════════════════════════ */
+const DC_API = 'https://drcash.io';
+
+function getDCTokens(){
+  /* When filterDC is set, return only that account; otherwise aggregate all connected accounts */
+  const ids = filterDC ? [filterDC] : ['drcash1','drcash2','drcash3'];
+  return ids
+    .filter(id => conns[id] && conns[id].token)
+    .map(id => ({ id, token: conns[id].token }));
+}
+
+/* ════════════════════════════════════════════
+   DATE RANGE LOGIC
+════════════════════════════════════════════ */
+function isMultiDay(range){ return !['today','yesterday'].includes(range); }
+
+function getRangeDates(range){
+  let from = new Date(TODAY), to = new Date(TODAY);
+  switch(range){
+    case 'yesterday':
+      from.setDate(from.getDate()-1); to.setDate(to.getDate()-1); break;
+    case 'last7':
+      from.setDate(from.getDate()-6); break;
+    case 'last30':
+      from.setDate(from.getDate()-29); break;
+    case 'thismonth':
+      from = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1); break;
+    case 'lastmonth':
+      from = new Date(TODAY.getFullYear(), TODAY.getMonth()-1, 1);
+      to   = new Date(TODAY.getFullYear(), TODAY.getMonth(), 0); break;
+    case 'alltime':
+      from = new Date(2020,0,1); break;
+    /* 'today': default — from=to=TODAY */
+  }
+  return { from: dkey(from), to: dkey(to), fromDate: from, toDate: to };
+}
+
+function aggregateStoredData(fromDate, toDate){
+  const r = {spend:0,income:0,approved:0,rejected:0,trash:0,hold:0,total:0,drCash:[],topOffers:[]};
+  const cur = new Date(fromDate);
+  while(cur <= toDate){
+    const d = allData[dkey(cur)];
+    if(d){
+      r.spend    += d.spend    || 0;
+      r.income   += d.income   || 0;
+      r.approved += (d.leads||{}).approved || 0;
+      r.rejected += (d.leads||{}).rejected || 0;
+      r.trash    += (d.leads||{}).trash    || 0;
+      r.hold     += (d.leads||{}).hold     || 0;
+      r.total    += (d.leads||{}).total    || 0;
+    }
+    cur.setDate(cur.getDate()+1);
+  }
+  return r;
+}
+
+async function fetchRangeData(range){
+  const accounts = getDCTokens();
+  if(!accounts.length) return null;
+  const { from, to } = getRangeDates(range);
+  try{
+    const results = await Promise.all(accounts.map(async ({id, token})=>{
+      const h = {'Authorization':`Bearer ${token}`,'Accept':'application/json'};
+      const [rO, rF] = await Promise.all([
+        fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${from}&date_to=${to}`,{headers:h}),
+        fetch(`${DC_API}/v1/chart/finance?scale=2&date_from=${from}&date_to=${to}`,{headers:h}),
+      ]);
+      const op  = ((await rO.json()).payload)||{};
+      const fp  = ((await rF.json()).payload)||{};
+      const sum = arr => (!arr||!arr.length)?0:arr.reduce((s,x)=>s+(Number(x.value)||0),0);
+      const approved   = sum(op.approve);
+      const trash      = sum(op.trash);
+      const validTotal = sum(op.valid);
+      const total      = validTotal + trash;
+      const hold       = Math.max(0, validTotal - approved);
+      const income     = sum(fp.profit);
+      return {income, approved, trash, hold, total, rejected:0};
+    }));
+    return {
+      income:   results.reduce((s,r)=>s+r.income,  0),
+      approved: results.reduce((s,r)=>s+r.approved,0),
+      rejected: results.reduce((s,r)=>s+r.rejected,0),
+      trash:    results.reduce((s,r)=>s+r.trash,   0),
+      hold:     results.reduce((s,r)=>s+r.hold,    0),
+      total:    results.reduce((s,r)=>s+r.total,   0),
+      spend:0, drCash:[], topOffers:[],
+    };
+  }catch(e){
+    console.error('[RangeFetch]', e);
+    return null;
+  }
+}
+
+function updateRangeDateCard(range){
+  const { fromDate, toDate } = getRangeDates(range);
+  const multi = isMultiDay(range);
+  const relEl = document.getElementById('dateRel');
+  const valEl = document.getElementById('dateVal');
+  if(!relEl||!valEl) return;
+  if(!multi) return; /* single-day handled by renderDashboard via relLabel/fdate */
+  relEl.textContent = RANGE_CFG[range].label;
+  if(range==='alltime'){
+    valEl.textContent = 'All Time';
+  } else if(range==='thismonth'){
+    valEl.textContent = `${MONTHS[TODAY.getMonth()]} ${TODAY.getFullYear()}`;
+  } else if(range==='lastmonth'){
+    valEl.textContent = `${MONTHS[fromDate.getMonth()]} ${fromDate.getFullYear()}`;
+  } else {
+    const fmt = d => `${MONTHS[d.getMonth()].slice(0,3)} ${d.getDate()}`;
+    valEl.textContent = `${fmt(fromDate)} – ${fmt(toDate)}, ${toDate.getFullYear()}`;
+  }
+}
+
+function pillSelect(range){
+  /* highlight the clicked pill, clear all others */
+  document.querySelectorAll('.range-pill').forEach(p=>
+    p.classList.toggle('active', p.dataset.range===range)
+  );
+  /* sync calendar pick so opening the calendar shows the right month */
+  const { fromDate } = getRangeDates(range);
+  calPickStart = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
+  calPickEnd   = isMultiDay(range)
+    ? new Date(getRangeDates(range).toDate.getFullYear(), getRangeDates(range).toDate.getMonth(), getRangeDates(range).toDate.getDate())
+    : null;
+  calHoverDate = null;
+  /* delegate to selectRange for data + render */
+  selectRange(range);
+}
+
+function selectRange(range){
+  if(!RANGE_CFG[range]) return;
+  curRange = range;
+  if(!isMultiDay(range)){
+    RANGE_DATA = null;
+    if(range==='yesterday'){ const y=new Date(TODAY); y.setDate(y.getDate()-1); curDate=y; }
+    else curDate=new Date(TODAY);
+    updateRangeDateCard(range);
+    renderDashboard();
+    return;
+  }
+  updateRangeDateCard(range);
+  RANGE_DATA = null;
+  const { fromDate, toDate } = getRangeDates(range);
+  RANGE_DATA = aggregateStoredData(fromDate, toDate);
+  renderDashboard();
+  if(hasAnyConn()){
+    fetchRangeData(range).then(data=>{
+      if(data){ RANGE_DATA = data; renderDashboard(); }
+    });
+  }
+}
+
+/* ── AdCombo stats fetch ── */
+async function fetchAdComboStats(token, date){
+  try {
+    /* AdCombo uses api_key as a query param — no Auth header */
+    const resp = await fetch(
+      `https://adcombo.com/api/json/stat/?api_key=${encodeURIComponent(token)}&date_from=${date}&date_to=${date}`,
+      { headers: { 'Accept': 'application/json' } }
+    );
+    if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const json = await resp.json();
+    if(json.status === 'error' || json.error) throw new Error(json.message || json.error || 'API error');
+    /* response may be {data:[...]} or {data:{...}} or direct array */
+    const raw   = json.data ?? json.result ?? json;
+    const items = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+    const sum   = f => items.reduce((s, x) => s + (parseFloat(x[f]) || 0), 0);
+    const approved = sum('approved');
+    const hold     = sum('hold');
+    const rejected = sum('rejected');
+    const trash    = sum('trash');
+    const income   = sum('revenue') || sum('profit') || sum('payout');
+    const total    = approved + hold + rejected + trash;
+    console.log(`[AdCombo] income=${income} total=${total} approved=${approved}`);
+    return { income, approved, hold, rejected, trash, total };
+  } catch(e) {
+    console.log('[AdCombo] fetch blocked or failed:', e.message || e);
+    return null;
+  }
+}
+
+async function fetchLiveData(){
+  const accounts   = getDCTokens();
+  const hasAdCombo = !!(conns['adcombo'] && conns['adcombo'].token);
+  if(!accounts.length && !hasAdCombo){ toast('Connect an account first','err'); return; }
+
+  toast(`🔄 Fetching live data from ${accounts.length} Dr.Cash account${accounts.length>1?'s':''}…`);
+  const date = dkey(TODAY);
+  const monthStart = `${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}-01`;
+  const day = String(TODAY.getDate());
+
+  const pick = (arr, key) => {
+    if(!arr || !arr.length) return 0;
+    const skey = String(key);
+    const hit = arr.find(x => String(x.key) === skey);
+    return hit ? (Number(hit.value) || 0) : 0;
+  };
+
+  try {
+    /* fetch all accounts in parallel using allSettled — one bad token can't kill the whole aggregate */
+    console.log(`[fetchLiveData] fetching ${accounts.length} DC account(s):`, accounts.map(a=>a.id).join(', '), hasAdCombo ? '+ AdCombo' : '');
+    const settled = await Promise.allSettled(accounts.map(async ({id, token}) => {
+      const h = {'Authorization':`Bearer ${token}`,'Accept':'application/json'};
+
+      /* CORE fetch — income/leads/balance — must never fail */
+      const [rOrder, rFin, rBal, rMonth] = await Promise.all([
+        fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${date}&date_to=${date}`, {headers:h}),
+        fetch(`${DC_API}/v1/chart/finance?scale=2&date_from=${date}&date_to=${date}`, {headers:h}),
+        fetch(`${DC_API}/v1/balance`, {headers:h}),
+        fetch(`${DC_API}/v1/chart/finance?scale=2&date_from=${monthStart}&date_to=${date}`, {headers:h}),
+      ]);
+      const oData = await rOrder.json();
+      const fData = await rFin.json();
+      const bData = await rBal.json();
+      const mData = await rMonth.json();
+
+      const op   = oData.payload || {};
+      const opKeys = Object.keys(op);
+
+      /* log every key and its value for today — helps find the rejected field name */
+      console.log(`[DC ${id}] order keys:`, opKeys.join(', '));
+      opKeys.forEach(k => {
+        if(Array.isArray(op[k])){
+          const v = pick(op[k], day);
+          console.log(`  [DC ${id}] key="${k}" value=${v}`);
+        }
+      });
+
+      const approved   = pick(op.approve, day);
+      const trash      = pick(op.trash,   day);
+      /* op.valid = all non-trash leads combined (approve+hold+reject) — NOT just hold */
+      const validTotal = pick(op.valid,   day);
+      /* Real total = validTotal + trash (op.valid already includes approved) */
+      const total = validTotal + trash;
+
+      /* Try /v1/lead to get per-status breakdown for hold and rejected */
+      let hold = 0, rejected = 0;
+      try {
+        const lResp = await fetch(
+          `${DC_API}/v1/lead?date_from=${date}&date_to=${date}&limit=1000`,
+          {headers: h}
+        );
+        if(lResp.ok){
+          const lData = await lResp.json();
+          const pl = lData.payload || lData;
+          const items = pl.items || pl.list || pl.data || (Array.isArray(pl) ? pl : []);
+          if(items.length > 0){
+            items.forEach(lead => {
+              const st = String(lead.status || lead.status_id || lead.state || '').toLowerCase();
+              if(['hold','wait','waiting','on_hold','pending','2'].includes(st)) hold++;
+              else if(['reject','rejected','cancel','cancelled','canceled',
+                       'refuse','refused','decline','declined','revoke','revoked',
+                       'not_approve','no_approve','3'].includes(st)) rejected++;
+            });
+            console.log(`[DC ${id}] /v1/lead: hold=${hold} rejected=${rejected} items=${items.length}`);
+          }
+        }
+      } catch(e) {
+        console.log(`[DC ${id}] /v1/lead blocked:`, e.message||e);
+      }
+
+      /* Fallback when lead endpoint unavailable: split validTotal into hold/rejected best-effort */
+      if(hold === 0 && rejected === 0 && validTotal > approved){
+        hold = validTotal - approved; /* pending = valid minus already-approved */
+      }
+      const income   = pick((fData.payload||{}).profit, day);
+      const monthly  = ((mData.payload||{}).profit||[]).reduce((s,x) => s+(x.value||0), 0);
+
+      const balItems = (bData.payload||{}).items || [];
+      const avail    = (balItems.find(b=>b.type===0&&b.currency==='USD')||{}).sum || 0;
+      const pend     = (balItems.find(b=>b.type===1&&b.currency==='USD')||{}).sum || 0;
+
+      /* OFFERS — single clean fetch, silent on failure */
+      let offers = [];
+      try {
+        const offResp = await fetch(
+          `${DC_API}/v1/stat/offer?date_from=${monthStart}&date_to=${date}&limit=100`,
+          {headers: h}
+        );
+        const offData = await offResp.json();
+        const pl = offData.payload || offData.data || offData || {};
+        const offItems = Array.isArray(pl) ? pl
+                       : (pl.items || pl.list || pl.data || pl.offers || []);
+        const parseN = v => parseFloat(v) || 0;
+        offers = offItems.map(o => {
+          const offerObj = o.offer || o.offer_info || {};
+          return {
+            name:     offerObj.name || o.offer_name || o.name || o.title || `Offer #${o.offer_id||o.id||'?'}`,
+            net:      'DR.CASH',
+            leads:    parseN(o.approve||o.approved||0) + parseN(o.valid||o.hold||0) + parseN(o.trash||0) + parseN(o.reject||o.rejected||0),
+            approved: parseN(o.approve || o.approved),
+            hold:     parseN(o.valid   || o.hold),
+            earn:     parseN(o.profit  || o.revenue || o.income || o.earn),
+          };
+        }).filter(o => o.leads > 0 || o.earn > 0);
+      } catch(e) { /* silent — CORS blocked from file://, offers stay empty */ }
+
+      return { id, income, approved, rejected, trash, hold, total, monthly, avail, pend, offers };
+    }));
+
+    /* collect only the accounts that succeeded; warn on failures */
+    const results = settled.filter(s => s.status === 'fulfilled').map(s => s.value);
+    settled.forEach((s, i) => {
+      if(s.status === 'rejected') console.warn(`[DC ${accounts[i]?.id}] fetch failed:`, s.reason);
+    });
+    console.log(`[fetchLiveData] ${results.length}/${accounts.length} DC accounts OK:`, results.map(r=>r.id).join(', '));
+
+    /* ── Dr.Cash per-account totals ── */
+    const totalIncome   = results.reduce((s,r) => s+r.income,   0);
+    const totalApproved = results.reduce((s,r) => s+r.approved, 0);
+    const totalRejected = results.reduce((s,r) => s+r.rejected, 0);
+    const totalTrash    = results.reduce((s,r) => s+r.trash,    0);
+    const totalHold     = results.reduce((s,r) => s+r.hold,     0);
+    const totalLeads    = results.reduce((s,r) => s+r.total,    0);
+    const totalMonthly  = results.reduce((s,r) => s+r.monthly,  0);
+    const totalAvail    = results.reduce((s,r) => s+r.avail,    0);
+    const totalPend     = results.reduce((s,r) => s+r.pend,     0);
+
+    /* merge Dr.Cash offers */
+    const offerMap = {};
+    results.forEach(r => (r.offers||[]).forEach(o => {
+      if(!offerMap[o.name]) offerMap[o.name] = {...o};
+      else {
+        offerMap[o.name].leads    += o.leads;
+        offerMap[o.name].approved += o.approved;
+        offerMap[o.name].hold     += o.hold;
+        offerMap[o.name].earn     += o.earn;
+      }
+    }));
+    const allOffers = Object.values(offerMap).sort((a,b) => b.earn - a.earn);
+
+    /* ── AdCombo — fetch and merge into grand totals (aggregate mode only, not per-account filter) ── */
+    let acResult = null;
+    if(!filterDC && hasAdCombo){
+      acResult = await fetchAdComboStats(conns['adcombo'].token, date);
+    }
+
+    /* grand totals = Dr.Cash (all/filtered) + AdCombo */
+    const grandIncome   = totalIncome   + (acResult ? acResult.income   : 0);
+    const grandApproved = totalApproved + (acResult ? acResult.approved : 0);
+    const grandRejected = totalRejected + (acResult ? acResult.rejected : 0);
+    const grandTrash    = totalTrash    + (acResult ? acResult.trash    : 0);
+    const grandHold     = totalHold     + (acResult ? acResult.hold     : 0);
+    const grandLeads    = totalLeads    + (acResult ? acResult.total    : 0);
+
+    /* ── write LIVE_DATA using grand totals ── */
+    LIVE_DATA.income        = grandIncome;
+    LIVE_DATA.balance       = totalAvail;
+    LIVE_DATA.pending       = totalPend;
+    LIVE_DATA.monthlyProfit = totalMonthly;
+    LIVE_DATA.leads = { total:grandLeads, approved:grandApproved, rejected:grandRejected,
+                        trash:grandTrash, hold:grandHold };
+
+    /* breakdown cards — individual row per account so it's clear what's aggregated */
+    const breakdown = [];
+    if(!filterDC){
+      /* aggregate mode: one row per successfully-fetched DC account */
+      results.forEach(r => {
+        const name = NETS[r.id] ? NETS[r.id].name : r.id;
+        breakdown.push({ name, revenue:r.income, leads:r.total,
+                         approved:r.approved, rejected:r.rejected,
+                         trash:r.trash, hold:r.hold });
+      });
+    } else if(results.length){
+      /* single-account filter: one row for that account */
+      const r = results[0];
+      breakdown.push({ name: NETS[filterDC] ? NETS[filterDC].name : filterDC,
+                       revenue:r.income, leads:r.total, approved:r.approved,
+                       rejected:r.rejected, trash:r.trash, hold:r.hold });
+    }
+    if(acResult){
+      breakdown.push({ name:'AdCombo', revenue:acResult.income, leads:acResult.total,
+                       approved:acResult.approved, rejected:acResult.rejected,
+                       trash:acResult.trash, hold:acResult.hold });
+    }
+    LIVE_DATA.drCash = breakdown;
+    if(allOffers.length > 0) LIVE_DATA.topOffers = allOffers;
+    console.log(`[Grand] income=${grandIncome} leads=${grandLeads} (DC=${totalLeads} AC=${acResult?acResult.total:0})`);
+
+    /* fetch yesterday for all accounts and aggregate for change arrows */
+    const prev = new Date(TODAY); prev.setDate(prev.getDate()-1);
+    const prevDay  = String(prev.getDate());
+    const prevDate = dkey(prev);
+    const yResults = await Promise.all(accounts.map(async ({token}) => {
+      const h = {'Authorization':`Bearer ${token}`,'Accept':'application/json'};
+      const [rOP2, rFP2] = await Promise.all([
+        fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${prevDate}&date_to=${prevDate}`,{headers:h}),
+        fetch(`${DC_API}/v1/chart/finance?scale=2&date_from=${prevDate}&date_to=${prevDate}`,{headers:h}),
+      ]);
+      const op2  = ((await rOP2.json()).payload)||{};
+      const fp2  = ((await rFP2.json()).payload)||{};
+      const app2   = pick(op2.approve, prevDay);
+      const trash2 = pick(op2.trash,   prevDay);
+      const valid2 = pick(op2.valid,   prevDay); /* same: valid = approve+hold+rejected */
+      const total2 = valid2 + trash2;
+
+      /* Try /v1/lead for yesterday's status breakdown */
+      let hold2 = 0, rej2 = 0;
+      try {
+        const lR2 = await fetch(
+          `${DC_API}/v1/lead?date_from=${prevDate}&date_to=${prevDate}&limit=1000`,
+          {headers:h}
+        );
+        if(lR2.ok){
+          const lD2 = await lR2.json();
+          const pl2 = lD2.payload || lD2;
+          const it2 = pl2.items || pl2.list || pl2.data || (Array.isArray(pl2) ? pl2 : []);
+          it2.forEach(lead => {
+            const st = String(lead.status || lead.status_id || lead.state || '').toLowerCase();
+            if(['hold','wait','waiting','on_hold','pending','2'].includes(st)) hold2++;
+            else if(['reject','rejected','cancel','cancelled','canceled',
+                     'refuse','refused','decline','declined','revoke','revoked',
+                     'not_approve','no_approve','3'].includes(st)) rej2++;
+          });
+        }
+      } catch(e) { /* silent */ }
+      if(hold2 === 0 && rej2 === 0 && valid2 > app2) hold2 = valid2 - app2;
+
+      return {
+        income:   pick(fp2.profit, prevDay),
+        approved: app2,
+        rejected: rej2,
+        trash:    trash2,
+        hold:     hold2,
+        total:    total2,
+      };
+    }));
+
+    YESTERDAY_LIVE.income = yResults.reduce((s,r) => s+r.income,   0);
+    YESTERDAY_LIVE.leads  = {
+      approved: yResults.reduce((s,r) => s+r.approved, 0),
+      rejected: yResults.reduce((s,r) => s+r.rejected, 0),
+      trash:    yResults.reduce((s,r) => s+r.trash,    0),
+      hold:     yResults.reduce((s,r) => s+r.hold,     0),
+      total:    yResults.reduce((s,r) => s+r.total,    0),
+    };
+
+    /* also pull TikTok spend if connected */
+    if(conns['tiktok'] && conns['tiktok'].token){
+      try {
+        const ttSpend = await fetchTikTokData();
+        LIVE_DATA.spend = ttSpend;
+        console.log('[TikTok spend today]', ttSpend);
+      } catch(e){ console.warn('[TikTok]', e); }
+    }
+
+    renderDashboard();  /* renderDashboard calls updateGoalCard(calcMonthlyProfit()) */
+    updateConnUI();
+    updateBalanceCard(totalAvail, totalPend);
+    const netPr    = (LIVE_DATA.income - LIVE_DATA.spend).toFixed(2);
+    const netNames = [
+      ...(results.length ? [results.map(r => NETS[r.id]?.name || r.id).join(' + ')] : []),
+      ...(acResult        ? ['AdCombo'] : []),
+    ].join(' + ') || 'connected accounts';
+    const dataMsg  = grandLeads > 0
+      ? `${grandLeads} leads · ${grandApproved}✓ · ${grandTrash}🗑 · $${netPr} net profit`
+      : 'No leads yet today — data will appear as activity comes in';
+    toast(`✅ ${netNames} — ${dataMsg}`);
+  } catch(err) {
+    console.error(err);
+    toast('❌ CORS blocked — live numbers are from last API pull','err');
+  }
+}
+
+function updateBalanceCard(avail, pend){
+  const fmt = n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const bar = document.getElementById('balBar');
+  if(bar) bar.style.display='flex';
+  const el  = document.getElementById('balAvail'); if(el)  el.textContent = fmt(avail);
+  const el2 = document.getElementById('balPend');  if(el2) el2.textContent = fmt(pend);
+  const el3 = document.getElementById('balTime');
+  if(el3){
+    const now = new Date();
+    el3.textContent = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  }
+}
+
+/* ════════════════════════════════════════════
+   CALENDAR PICKER
+   Inline onclick handlers call event.stopPropagation() FIRST, before
+   calRender() replaces innerHTML. This prevents the document outside-click
+   listener from seeing the now-detached node and closing the calendar.
+════════════════════════════════════════════ */
+const CAL_DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+let calOpen      = false;
+let calLY        = TODAY.getFullYear();
+let calLM        = TODAY.getMonth();
+let calPickStart = new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
+let calPickEnd   = null;
+let calHoverDate = null;
+
+function calRightYM(){ return calLM===11 ? {y:calLY+1,m:0} : {y:calLY,m:calLM+1}; }
+
+function calNav(delta){
+  let m = calLM + delta, y = calLY;
+  while(m > 11){ m -= 12; y++; }
+  while(m < 0) { m += 12; y--; }
+  calLM = m; calLY = y;
+  calRender();
+}
+
+function calDayClick(ds){
+  const date = new Date(ds + 'T12:00:00');
+  if(!calPickStart || (calPickStart && calPickEnd)){
+    calPickStart = date; calPickEnd = null; calHoverDate = null;
+  } else if(ds === dkey(calPickStart)){
+    calPickEnd = date; calHoverDate = null;
+  } else if(date < calPickStart){
+    calPickStart = date; calPickEnd = null;
+  } else {
+    calPickEnd = date; calHoverDate = null;
+  }
+  calRender();
+}
+
+function calHovDay(ds){
+  if(!calPickStart || calPickEnd) return;
+  const hd = new Date(ds + 'T12:00:00');
+  if(!calHoverDate || dkey(hd) !== dkey(calHoverDate)){
+    calHoverDate = hd; calRender();
+  }
+}
+function calLeaveGrid(){
+  if(calPickStart && !calPickEnd && calHoverDate){ calHoverDate = null; calRender(); }
+}
+
+function calBuildMonth(panelId, year, month, isLeft){
+  const panel = document.getElementById(panelId);
+  if(!panel) return;
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMo = new Date(year, month+1, 0).getDate();
+  const prevDays = new Date(year, month, 0).getDate();
+
+  /* stopPropagation is called FIRST in every handler so the document
+     outside-click listener never sees clicks from inside the calendar */
+  const navL = isLeft ? `<div class="cal-nav-grp">
+    <button class="cal-nb" onclick="event.stopPropagation();calNav(-12)" title="Prev year">‹‹</button>
+    <button class="cal-nb" onclick="event.stopPropagation();calNav(-1)"  title="Prev month">‹</button>
+  </div>` : '<div></div>';
+  const navR = !isLeft ? `<div class="cal-nav-grp">
+    <button class="cal-nb" onclick="event.stopPropagation();calNav(1)"   title="Next month">›</button>
+    <button class="cal-nb" onclick="event.stopPropagation();calNav(12)"  title="Next year">››</button>
+  </div>` : '<div></div>';
+
+  let days = '';
+  for(let i=firstDay-1; i>=0; i--)
+    days += `<span class="cal-d cal-other">${prevDays-i}</span>`;
+
+  const effEnd = calPickEnd || calHoverDate;
+  for(let d=1; d<=daysInMo; d++){
+    const date    = new Date(year, month, d);
+    const ds      = dkey(date);
+    const col     = (firstDay + d - 1) % 7;
+    const isToday = ds === dkey(TODAY);
+    const isFut   = date > TODAY;
+    const isRS    = calPickStart && ds === dkey(calPickStart);
+    const isRE    = calPickEnd   && ds === dkey(calPickEnd);
+    const isSingle= isRS && isRE;
+    const inRange = calPickStart && effEnd && date > calPickStart && date < effEnd;
+
+    let cls = 'cal-d';
+    if(isToday)  cls += ' cal-today';
+    if(isFut)    cls += ' cal-fut';
+    if(isSingle) cls += ' cal-single';
+    else if(isRS) cls += inRange ? ' cal-rs cal-in' : ' cal-rs';
+    else if(isRE) cls += inRange ? ' cal-re cal-in' : ' cal-re';
+    else if(inRange){
+      cls += ' cal-in';
+      if(col === 0) cls += ' cal-row-s';
+      if(col === 6) cls += ' cal-row-e';
+    }
+
+    if(isFut){
+      days += `<span class="${cls}">${d}</span>`;
+    } else {
+      days += `<span class="${cls}" data-ds="${ds}">${d}</span>`;
+    }
+  }
+
+  const total = Math.ceil((firstDay + daysInMo) / 7) * 7;
+  for(let i=1; i<=total-firstDay-daysInMo; i++)
+    days += `<span class="cal-d cal-other">${i}</span>`;
+
+  panel.innerHTML = `
+    <div class="cal-mnav">${navL}<span class="cal-mlbl">${MONTHS[month]} ${year}</span>${navR}</div>
+    <div class="cal-dow">${CAL_DOW.map(d=>`<span>${d}</span>`).join('')}</div>
+    <div class="cal-days">${days}</div>`;
+}
+
+function calRender(){
+  const {y, m} = calRightYM();
+  calBuildMonth('calPanelLeft',  calLY, calLM, true);
+  calBuildMonth('calPanelRight', y,     m,     false);
+  const ok = document.getElementById('calOkBtn');
+  if(ok) ok.disabled = !calPickStart;
+  const lbl = document.getElementById('calFootLbl');
+  if(lbl){
+    if(!calPickStart)    lbl.innerHTML = 'Select a date or drag to pick a range';
+    else if(!calPickEnd) lbl.innerHTML = `<b>${fdate(calPickStart)}</b> — click another date for a range, or Confirm`;
+    else                 lbl.innerHTML = `<b>${fdate(calPickStart)}</b> &rarr; <b>${fdate(calPickEnd)}</b>`;
+  }
+}
+
+function toggleCalendar(e){
+  if(e) e.stopPropagation();
+  calOpen ? closeCalendar() : openCalendar();
+}
+function openCalendar(){
+  calOpen = true;
+  if(calPickStart){ calLY = calPickStart.getFullYear(); calLM = calPickStart.getMonth(); }
+  else            { calLY = TODAY.getFullYear();        calLM = TODAY.getMonth(); }
+  calRender();
+  document.getElementById('calTrigger')?.classList.add('open');
+  document.getElementById('calDropdown')?.classList.add('open');
+}
+function closeCalendar(){
+  calOpen = false;
+  document.getElementById('calTrigger')?.classList.remove('open');
+  document.getElementById('calDropdown')?.classList.remove('open');
+}
+function calCancel(){ closeCalendar(); }
+
+async function calConfirm(){
+  if(!calPickStart) return;
+  const end     = calPickEnd || calPickStart;
+  const fromStr = dkey(calPickStart);
+  const toStr   = dkey(end);
+  closeCalendar();
+
+  document.querySelectorAll('.range-pill').forEach(p => p.classList.remove('active'));
+  const relEl = document.getElementById('dateRel');
+  const valEl = document.getElementById('dateVal');
+
+  if(fromStr === toStr){
+    /* single day */
+    RANGE_DATA = null;
+    curDate = new Date(fromStr + 'T12:00:00');
+    const tStr = dkey(TODAY);
+    const yStr = dkey(new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()-1));
+    curRange = fromStr===tStr ? 'today' : fromStr===yStr ? 'yesterday' : 'custom';
+    if(curRange !== 'custom')
+      document.querySelectorAll('.range-pill').forEach(p =>
+        p.classList.toggle('active', p.dataset.range === curRange));
+    if(relEl) relEl.textContent = curRange==='today' ? 'Today' : curRange==='yesterday' ? 'Yesterday' : 'Selected Date';
+    if(valEl) valEl.textContent = fdate(curDate);
+    renderDashboard();
+
+  } else {
+    /* date range */
+    curRange = 'custom';
+    if(relEl) relEl.textContent = 'Custom Range';
+    if(valEl){
+      const fmt = d => `${MONTHS[d.getMonth()].slice(0,3)} ${d.getDate()}`;
+      valEl.textContent = `${fmt(calPickStart)} – ${fmt(end)}, ${end.getFullYear()}`;
+    }
+    RANGE_DATA = aggregateStoredData(calPickStart, end);
+    renderDashboard();
+    if(hasAnyConn()){
+      toast(`🔄 Loading ${fromStr} → ${toStr}…`);
+      try{
+        const accounts = getDCTokens();
+        const results = await Promise.all(accounts.map(async ({token}) => {
+          const h = {'Authorization':`Bearer ${token}`,'Accept':'application/json'};
+          const [rO, rF] = await Promise.all([
+            fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${fromStr}&date_to=${toStr}`,{headers:h}),
+            fetch(`${DC_API}/v1/chart/finance?scale=2&date_from=${fromStr}&date_to=${toStr}`,{headers:h}),
+          ]);
+          const op  = ((await rO.json()).payload) || {};
+          const fp  = ((await rF.json()).payload) || {};
+          const sum = a => (!a||!a.length) ? 0 : a.reduce((s,x) => s+(Number(x.value)||0), 0);
+          const app = sum(op.approve), trash = sum(op.trash), vt = sum(op.valid);
+          return { income:sum(fp.profit), approved:app, trash, hold:Math.max(0,vt-app), total:vt+trash, rejected:0 };
+        }));
+        RANGE_DATA = {
+          income:   results.reduce((s,r) => s+r.income,   0),
+          approved: results.reduce((s,r) => s+r.approved, 0),
+          rejected: 0,
+          trash:    results.reduce((s,r) => s+r.trash,    0),
+          hold:     results.reduce((s,r) => s+r.hold,     0),
+          total:    results.reduce((s,r) => s+r.total,    0),
+          spend: 0,
+          drCash:[], topOffers:[],
+        };
+        renderDashboard();
+        toast(`✅ Loaded ${fromStr} → ${toStr}`);
+      } catch(e){ console.error('[CalRange]',e); toast('Loaded from stored records'); }
+    }
+  }
+}
+
+/* close when clicking outside cal-wrap entirely */
+document.addEventListener('click', function(e){
+  const w = document.getElementById('calWrap');
+  if(calOpen && w && !w.contains(e.target)) closeCalendar();
+});
+
+/* ════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════ */
+
+/* ── Dark Mode ── */
+function toggleDarkMode(){
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('atp_theme', isLight ? 'light' : 'dark');
+  const btn = document.getElementById('btnDarkMode');
+  if(btn) btn.textContent = isLight ? '🌙 Dark Mode' : '☀️ Light Mode';
+}
+/* Restore saved theme before first paint */
+(()=>{
+  if(localStorage.getItem('atp_theme')==='light'){
+    document.body.classList.add('light');
+    /* button text set after DOM ready below */
+  }
+})();
+
+/* Check BEFORE loadAll so we know if this is the very first run ever */
+const _firstRun = !localStorage.getItem('atp_conns');
+
+loadAll();
+
+/* Seed default tokens only on first-ever load (empty localStorage).
+   After that, ALL connection state comes exclusively from localStorage —
+   user connects/disconnects via the UI, and it persists permanently. */
+if(_firstRun){
+  conns['drcash1'] = { token:'ZJK2ZTQ2NWETZTM4YS00MJU1LTK1ODQTNDM2NGM2NTAXMDUY', connectedAt:Date.now() };
+  conns['tiktok']  = { token:'20260425184542CB1CAF8DE572535F4AE0', advertiserId:'7549623163967717392', connectedAt:Date.now() };
+  saveConns();
+}
+
+/* initialise calendar trigger label to today */
+(()=>{
+  const relEl=document.getElementById('dateRel');
+  const valEl=document.getElementById('dateVal');
+  if(relEl) relEl.textContent='Today';
+  if(valEl) valEl.textContent=fdate(TODAY);
+})();
+
+/* sync dark-mode button label to saved preference */
+(()=>{
+  const btn = document.getElementById('btnDarkMode');
+  if(btn) btn.textContent = document.body.classList.contains('light') ? '🌙 Dark Mode' : '☀️ Light Mode';
+})();
+
+renderDashboard();
+updateConnUI();
+/* auto-fetch Dr.Cash + TikTok on load */
+setTimeout(()=>{
+  if(getDCTokens().length) fetchLiveData();
+  else if(conns['tiktok']) fetchTikTokData().then(s=>{ LIVE_DATA.spend=s; renderDashboard(); });
+}, 800);
+</script>
+</body>
 </html>
