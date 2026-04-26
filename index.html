@@ -2335,34 +2335,30 @@ async function fetchLiveData(){
       /* Real total = validTotal + trash (op.valid already includes approved) */
       const total = validTotal + trash;
 
-      /* Get rejected via status=3 filter on /v1/lead */
+      /* Get hold+rejected by trying multiple endpoints */
       let hold = 0, rejected = 0;
-      try {
-        const [rRej, rHold] = await Promise.all([
-          fetch(`${DC_API}/v1/lead?date_from=${date}&date_to=${date}&status=3&per_page=1000&page=1`, {headers:h}),
-          fetch(`${DC_API}/v1/lead?date_from=${date}&date_to=${date}&status=2&per_page=1000&page=1`, {headers:h}),
-        ]);
-        const rejData  = await rRej.json();
-        const holdData = await rHold.json();
-        const parseCount = d => {
-          const pl = d.payload || d;
-          if(pl && pl.total != null) return parseInt(pl.total) || 0;
-          if(pl && pl.count != null) return parseInt(pl.count) || 0;
-          const items = pl.items || pl.list || pl.data || (Array.isArray(pl) ? pl : []);
-          return items.length;
-        };
-        rejected = parseCount(rejData);
-        hold     = parseCount(holdData);
-        console.log(`[DC ${id}] status filter — rejected=${rejected} hold=${hold}`);
-        console.log(`[DC ${id}] rej payload:`, JSON.stringify(rejData).slice(0,200));
-      } catch(e) {
-        console.log(`[DC ${id}] status filter failed:`, e.message||e);
+      const tryEndpoints = [
+        `${DC_API}/v1/order?date_from=${date}&date_to=${date}&status=3&per_page=500`,
+        `${DC_API}/v1/order?date_from=${date}&date_to=${date}&status[]=3&per_page=500`,
+        `${DC_API}/v1/lead?date_from=${date}&date_to=${date}&status=3&per_page=500`,
+        `${DC_API}/v1/lead?date_from=${date}&date_to=${date}&status[]=3&per_page=500`,
+      ];
+      for(const url of tryEndpoints){
+        try{
+          const r = await fetch(url, {headers:h});
+          if(!r.ok) continue;
+          const d2 = await r.json();
+          const pl = d2.payload || d2;
+          const total = pl.total ?? pl.count ?? pl.length ?? null;
+          const items = pl.items || pl.list || pl.data || (Array.isArray(pl)?pl:[]);
+          const cnt = total != null ? parseInt(total)||0 : items.length;
+          console.log(`[DC ${id}] tried: ${url.split('?')[1]} → cnt=${cnt} payload:`, JSON.stringify(d2).slice(0,150));
+          if(cnt > 0){ rejected = cnt; break; }
+        }catch(e){ console.log(`[DC ${id}] endpoint failed:`,e.message); }
       }
-
-      /* Fallback: all remainder goes to hold */
-      if(hold === 0 && rejected === 0 && validTotal > approved){
-        hold = validTotal - approved;
-      }
+      /* hold = remaining valid after approved and rejected */
+      hold = Math.max(0, validTotal - approved - rejected);
+      console.log(`[DC ${id}] final — hold=${hold} rejected=${rejected} valid=${validTotal} approved=${approved}`);
       const income   = pick((fData.payload||{}).profit, day);
       const monthly  = ((mData.payload||{}).profit||[]).reduce((s,x) => s+(x.value||0), 0);
 
