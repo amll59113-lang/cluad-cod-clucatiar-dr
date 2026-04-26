@@ -917,6 +917,7 @@ body.light .goals-footer{border-top-color:rgba(0,0,0,.07)}
         <div class="m-value v-pu" id="mIncome">$0.00</div>
         <div class="m-chg" id="chgIncome"></div>
         <div class="m-sub" id="mIncomeSub">Dr.Cash + AdCombo</div>
+        <button class="spend-edit-btn" onclick="promptIncome()">✏️ Enter Income</button>
       </div>
       <div class="metric-card c-profit fu3">
         <div class="m-header"><span class="m-label">Net Profit</span><div class="m-icon i-gr">📈</div></div>
@@ -1336,6 +1337,32 @@ function promptSpend(){
   toast(`✅ Spend $${n.toFixed(2)} saved · ${rangeLabel} · ${acctLabel}`);
 }
 
+function promptIncome(){
+  const multi      = isMultiDay(curRange);
+  const rangeLabel = RANGE_CFG[curRange] ? RANGE_CFG[curRange].label : 'Selected Period';
+  const acctLabel  = filterDC && NETS[filterDC] ? NETS[filterDC].name : 'All Accounts';
+  const inKey      = currentSpendKey();
+  const cur        = incomeStore.hasOwnProperty(inKey) ? incomeStore[inKey]
+    : (filterDC ? 0 : multi ? (RANGE_DATA?.income||0) : (LIVE_DATA.income||allData[dkey(curDate)]?.income||0));
+  const val = prompt(`Enter Total Income\n${rangeLabel} · ${acctLabel} (USD):`, cur.toFixed(2));
+  if(val === null) return;
+  const n = parseFloat(val.replace(/[^0-9.]/g,''));
+  if(!isFinite(n) || n < 0){ toast('Invalid amount','err'); return; }
+  incomeStore[inKey] = n;
+  saveIncomeStore();
+  if(multi){
+    if(RANGE_DATA) RANGE_DATA.income = n;
+  } else {
+    if(!filterDC) LIVE_DATA.income = n;
+    const ck = dkey(curDate);
+    if(!allData[ck]) allData[ck] = { spend:0, income:0, leads:{total:0,approved:0,rejected:0,trash:0,hold:0}, drCash:[], topOffers:[] };
+    allData[ck].income = n;
+    saveData();
+  }
+  renderDashboard();
+  toast(`✅ Income $${n.toFixed(2)} saved · ${rangeLabel} · ${acctLabel}`);
+}
+
 function calcMonthlyProfit(){
   /* income: Dr.Cash API already returns cumulative month-to-date total in LIVE_DATA.monthlyProfit */
   const monthlyIncome = LIVE_DATA.monthlyProfit || LIVE_DATA.income || 0;
@@ -1418,7 +1445,8 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 let allData    = {};
-let spendStore = {};  /* { 'rangeOrDate:accountOrAll': amount } — e.g. '2026-04-26:all', 'last7:drcash1' */
+let spendStore  = {};
+let incomeStore = {};  /* same key format as spendStore: 'rangeOrDate:accountOrAll' */
 let conns    = {};   /* { netId: { token, connectedAt } } */
 let curNet   = null; /* currently open modal's netId */
 function hasAnyConn(){ return getDCTokens().length > 0 || !!(conns['adcombo'] && conns['adcombo'].token); }
@@ -1427,7 +1455,8 @@ function hasAnyConn(){ return getDCTokens().length > 0 || !!(conns['adcombo'] &&
 function loadAll(){
   try{ const r=localStorage.getItem('atp_v4');       if(r) allData=JSON.parse(r); }catch{}
   try{ const r=localStorage.getItem('atp_conns');    if(r) conns=JSON.parse(r); }catch{}
-  try{ const r=localStorage.getItem('atp_spend_v2'); if(r) spendStore=JSON.parse(r); }catch{}
+  try{ const r=localStorage.getItem('atp_spend_v2');  if(r) spendStore=JSON.parse(r);  }catch{}
+  try{ const r=localStorage.getItem('atp_income_v1'); if(r) incomeStore=JSON.parse(r); }catch{}
   /* migrate atp_spend (v1 rangeSpend with no account info) → insert as ':all' entries */
   try{
     const old=localStorage.getItem('atp_spend');
@@ -1446,7 +1475,8 @@ function loadAll(){
 }
 function saveData(){ localStorage.setItem('atp_v4',JSON.stringify(allData)); }
 function saveConns(){ localStorage.setItem('atp_conns',JSON.stringify(conns)); }
-function saveSpendStore(){ localStorage.setItem('atp_spend_v2',JSON.stringify(spendStore)); }
+function saveSpendStore(){  localStorage.setItem('atp_spend_v2', JSON.stringify(spendStore));  }
+function saveIncomeStore(){ localStorage.setItem('atp_income_v1',JSON.stringify(incomeStore)); }
 
 /* ── utils ── */
 function dkey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
@@ -1868,7 +1898,9 @@ function renderDashboard(){
   const sp = spendStore.hasOwnProperty(_spKey)
     ? spendStore[_spKey]
     : (filterDC ? 0 : (d.spend || 0));
-  const inc=d.income, pr=inc-sp, roi=sp>0?(pr/sp)*100:0, l=d.leads;
+  const _inKey = currentSpendKey();
+  const inc = incomeStore.hasOwnProperty(_inKey) ? incomeStore[_inKey] : (filterDC ? 0 : (d.income || 0));
+  const pr=inc-sp, roi=sp>0?(pr/sp)*100:0, l=d.leads;
 
   document.getElementById('mSpend').dataset.cur='0';
   animTo('mSpend',sp,2,'$');
@@ -1912,9 +1944,14 @@ function renderDashboard(){
 
   const incSub=document.getElementById('mIncomeSub');
   if(incSub){
-    const dcAcctLabel = filterDC && NETS[filterDC] ? ` · ${NETS[filterDC].name} only` : ' · All Networks';
-    if(multi) incSub.textContent=`📊 ${RANGE_CFG[curRange].label}${dcAcctLabel}`;
-    else      incSub.textContent=(hasAnyConn()&&isToday)?`🟢 Live${dcAcctLabel}`:'Dr.Cash + AdCombo';
+    const acctLblI = filterDC && NETS[filterDC] ? NETS[filterDC].name : null;
+    const hasIncEntry = incomeStore.hasOwnProperty(_inKey);
+    let incSubTxt;
+    if(multi)         incSubTxt = hasIncEntry ? `${RANGE_CFG[curRange].label} · tap ✏️ to edit` : 'Tap ✏️ to enter income';
+    else if(acctLblI) incSubTxt = hasIncEntry ? `${acctLblI} · tap ✏️ to edit` : `${acctLblI} · tap ✏️ to enter`;
+    else if(hasIncEntry) incSubTxt = 'All Networks · tap ✏️ to edit';
+    else              incSubTxt = (hasAnyConn()&&isToday) ? '🟢 Live · Dr.Cash + AdCombo' : 'Tap ✏️ to enter income';
+    incSub.textContent = incSubTxt;
   }
   /* balance + goal only make sense for today's single-day view */
   if(!multi&&hasAnyConn()&&isToday&&d.balance!=null) updateBalanceCard(d.balance||0, d.pending||0);
