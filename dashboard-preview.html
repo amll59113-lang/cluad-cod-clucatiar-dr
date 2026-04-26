@@ -786,7 +786,7 @@ body.light .goals-footer{border-top-color:rgba(0,0,0,.07)}
     <button class="footer-btn hi" onclick="fetchLiveData()">🔄 Refresh Live Data</button>
     <button class="footer-btn" id="btnDarkMode" onclick="toggleDarkMode()">🌙 Dark Mode</button>
     <button class="footer-btn" onclick="exportCSV()">📥 Export CSV</button>
-    <button class="footer-btn danger" onclick="sessionStorage.removeItem('atp_auth');location.reload()">🚪 Logout</button>
+    <button class="footer-btn danger" onclick="localStorage.removeItem('atp_auth');location.reload()">🚪 Logout</button>
   </div>
 </aside>
 
@@ -2808,7 +2808,7 @@ function doLogin(){
   const p = document.getElementById('loginPass').value;
   const err = document.getElementById('loginErr');
   if(u === _LU && p === _LP){
-    sessionStorage.setItem('atp_auth','1');
+    localStorage.setItem('atp_auth','1');
     document.getElementById('loginScreen').style.display='none';
     err.style.display='none';
   } else {
@@ -2818,8 +2818,8 @@ function doLogin(){
 }
 document.getElementById('loginUser').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginPass').focus(); });
 document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
-/* check session on load */
-if(sessionStorage.getItem('atp_auth')==='1'){
+/* check auth on load */
+if(localStorage.getItem('atp_auth')==='1'){
   document.getElementById('loginScreen').style.display='none';
 }
 
