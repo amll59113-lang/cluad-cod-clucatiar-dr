@@ -415,7 +415,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .cal-trigger-chevron{flex-shrink:0;color:var(--t3);transition:transform .22s;width:16px;height:16px}
 .cal-trigger.open .cal-trigger-chevron{transform:rotate(180deg)}
 
-.cal-dropdown{position:fixed;top:0;left:0;z-index:3000;width:638px;
+.cal-dropdown{position:absolute;top:calc(100% + 10px);left:0;z-index:600;width:638px;
   background:rgba(7,12,26,.98);border:1px solid rgba(255,255,255,.1);border-radius:20px;
   box-shadow:0 32px 80px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.04),
     inset 0 1px 0 rgba(255,255,255,.05);
@@ -2821,30 +2821,13 @@ function openCalendar(){
   if(calPickStart){ calLY = calPickStart.getFullYear(); calLM = calPickStart.getMonth(); }
   else            { calLY = TODAY.getFullYear();        calLM = TODAY.getMonth(); }
   calRender();
-  const trigger  = document.getElementById('calTrigger');
-  const dropdown = document.getElementById('calDropdown');
-  trigger?.classList.add('open');
-  if(trigger && dropdown){
-    /* Portal to body — escapes overflow:hidden/.content clipping so all 30 dates are clickable */
-    document.body.appendChild(dropdown);
-    const rect  = trigger.getBoundingClientRect();
-    const dropW = 638;
-    let top  = rect.bottom + 10;
-    let left = rect.left;
-    if(left + dropW > window.innerWidth - 8) left = Math.max(8, window.innerWidth - dropW - 8);
-    dropdown.style.top  = top  + 'px';
-    dropdown.style.left = left + 'px';
-  }
-  dropdown?.classList.add('open');
+  document.getElementById('calTrigger')?.classList.add('open');
+  document.getElementById('calDropdown')?.classList.add('open');
 }
 function closeCalendar(){
   calOpen = false;
   document.getElementById('calTrigger')?.classList.remove('open');
-  const dropdown = document.getElementById('calDropdown');
-  dropdown?.classList.remove('open');
-  /* Move dropdown back into calWrap so it's ready for the next open */
-  const calWrap = document.getElementById('calWrap');
-  if(calWrap && dropdown && dropdown.parentElement !== calWrap) calWrap.appendChild(dropdown);
+  document.getElementById('calDropdown')?.classList.remove('open');
 }
 function calCancel(){ closeCalendar(); }
 
@@ -2916,11 +2899,10 @@ async function calConfirm(){
   }
 }
 
-/* close when clicking outside cal-wrap and outside the portaled dropdown */
+/* close when clicking outside cal-wrap entirely */
 document.addEventListener('click', function(e){
-  const w    = document.getElementById('calWrap');
-  const drop = document.getElementById('calDropdown');
-  if(calOpen && w && !w.contains(e.target) && !drop?.contains(e.target)) closeCalendar();
+  const w = document.getElementById('calWrap');
+  if(calOpen && w && !w.contains(e.target)) closeCalendar();
 });
 
 /* ════════════════════════════════════════════
