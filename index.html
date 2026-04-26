@@ -2825,10 +2825,12 @@ function openCalendar(){
   const dropdown = document.getElementById('calDropdown');
   trigger?.classList.add('open');
   if(trigger && dropdown){
-    const rect   = trigger.getBoundingClientRect();
-    const dropW  = 638;
-    let   top    = rect.bottom + 10;
-    let   left   = rect.left;
+    /* Portal to body — escapes overflow:hidden/.content clipping so all 30 dates are clickable */
+    document.body.appendChild(dropdown);
+    const rect  = trigger.getBoundingClientRect();
+    const dropW = 638;
+    let top  = rect.bottom + 10;
+    let left = rect.left;
     if(left + dropW > window.innerWidth - 8) left = Math.max(8, window.innerWidth - dropW - 8);
     dropdown.style.top  = top  + 'px';
     dropdown.style.left = left + 'px';
@@ -2838,7 +2840,11 @@ function openCalendar(){
 function closeCalendar(){
   calOpen = false;
   document.getElementById('calTrigger')?.classList.remove('open');
-  document.getElementById('calDropdown')?.classList.remove('open');
+  const dropdown = document.getElementById('calDropdown');
+  dropdown?.classList.remove('open');
+  /* Move dropdown back into calWrap so it's ready for the next open */
+  const calWrap = document.getElementById('calWrap');
+  if(calWrap && dropdown && dropdown.parentElement !== calWrap) calWrap.appendChild(dropdown);
 }
 function calCancel(){ closeCalendar(); }
 
@@ -2910,10 +2916,11 @@ async function calConfirm(){
   }
 }
 
-/* close when clicking outside cal-wrap entirely */
+/* close when clicking outside cal-wrap and outside the portaled dropdown */
 document.addEventListener('click', function(e){
-  const w = document.getElementById('calWrap');
-  if(calOpen && w && !w.contains(e.target)) closeCalendar();
+  const w    = document.getElementById('calWrap');
+  const drop = document.getElementById('calDropdown');
+  if(calOpen && w && !w.contains(e.target) && !drop?.contains(e.target)) closeCalendar();
 });
 
 /* ════════════════════════════════════════════
