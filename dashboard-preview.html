@@ -467,8 +467,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .cal-d.cal-single::after{display:none}
 
 .cal-foot{display:flex;align-items:center;justify-content:space-between;
-  padding:14px 22px;border-top:1px solid rgba(255,255,255,.07);
-  background:rgba(3,5,14,.5);border-radius:0 0 20px 20px}
+  padding:14px 22px;border-bottom:1px solid rgba(255,255,255,.07);
+  background:rgba(3,5,14,.5);border-radius:20px 20px 0 0}
 .cal-foot-lbl{font-size:12px;color:var(--t3);font-weight:500}
 .cal-foot-lbl b{color:var(--grl);font-weight:700}
 .cal-foot-btns{display:flex;gap:8px}
@@ -841,17 +841,17 @@ body.light .goals-footer{border-top-color:rgba(0,0,0,.07)}
         onclick="event.stopPropagation();var _t=event.target.closest('[data-ds]');if(_t)calDayClick(_t.dataset.ds)"
         onmouseover="var _t=event.target.closest('[data-ds]');if(_t)calHovDay(_t.dataset.ds)"
         onmouseleave="calLeaveGrid()">
-        <div class="cal-months-grid">
-          <div class="cal-month-panel" id="calPanelLeft"></div>
-          <div class="cal-divider"></div>
-          <div class="cal-month-panel" id="calPanelRight"></div>
-        </div>
         <div class="cal-foot">
           <span class="cal-foot-lbl" id="calFootLbl">Select a start date</span>
           <div class="cal-foot-btns">
             <button class="cal-btn-cancel" onclick="calCancel()">Cancel</button>
             <button class="cal-btn-confirm" id="calOkBtn" onclick="calConfirm()" disabled>Confirm</button>
           </div>
+        </div>
+        <div class="cal-months-grid">
+          <div class="cal-month-panel" id="calPanelLeft"></div>
+          <div class="cal-divider"></div>
+          <div class="cal-month-panel" id="calPanelRight"></div>
         </div>
       </div>
     </div>
