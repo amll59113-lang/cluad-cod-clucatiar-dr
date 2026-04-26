@@ -1872,6 +1872,13 @@ function renderDashboard(){
     /* When a single account is selected, always use LIVE_DATA (even zeros) — never fall back to
        stored allData which belongs to a different account (drcash1's previously saved snapshot). */
     d = (filterDC || liveHasData) ? LIVE_DATA : (allData[ck] || LIVE_DATA);
+  } else if(curRange === 'yesterday' && hasAnyConn()){
+    /* use saved allData if exists; fallback to YESTERDAY_LIVE if already fetched as part of Today */
+    const ylHasData = YESTERDAY_LIVE.income > 0 || YESTERDAY_LIVE.leads.total > 0;
+    d = allData[ck] || (ylHasData ? {
+      income: YESTERDAY_LIVE.income, spend: YESTERDAY_LIVE.spend || 0,
+      leads: YESTERDAY_LIVE.leads, balance:0, pending:0, drCash:[], topOffers:[]
+    } : null);
   } else {
     d = allData[ck] || null;
   }
@@ -2275,6 +2282,8 @@ function selectRange(range){
     else curDate=new Date(TODAY);
     updateRangeDateCard(range);
     renderDashboard();
+    /* fetch live data from Dr.Cash for past single-day views */
+    if(range !== 'today' && hasAnyConn()) fetchDayData(dkey(curDate));
     return;
   }
   updateRangeDateCard(range);
@@ -2316,6 +2325,67 @@ async function fetchAdComboStats(token, date){
     console.log('[AdCombo] fetch blocked or failed:', e.message || e);
     return null;
   }
+}
+
+async function fetchDayData(dateStr){
+  const accounts = getDCTokens();
+  if(!accounts.length) return;
+  const dayNum = String(parseInt(dateStr.split('-')[2]));
+  const _pick = (arr, key) => {
+    if(!arr || !arr.length) return 0;
+    const hit = arr.find(x => String(x.key) === String(key));
+    return hit ? (Number(hit.value) || 0) : 0;
+  };
+  try {
+    const settled = await Promise.allSettled(accounts.map(async ({id, token}) => {
+      const h = {'Authorization':`Bearer ${token}`,'Accept':'application/json'};
+      const [rO, rF] = await Promise.all([
+        fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${dateStr}&date_to=${dateStr}`, {headers:h}),
+        fetch(`${DC_API}/v1/chart/finance?scale=2&date_from=${dateStr}&date_to=${dateStr}`, {headers:h}),
+      ]);
+      const op = ((await rO.json()).payload) || {};
+      const fp = ((await rF.json()).payload) || {};
+      const approved = _pick(op.approve, dayNum);
+      const trash    = _pick(op.trash,   dayNum);
+      const valid    = _pick(op.valid,   dayNum);
+      const total    = valid + trash;
+      const income   = _pick(fp.profit || [], dayNum);
+      let hold = Math.max(0, valid - approved), rejected = 0;
+      try {
+        const lR = await fetch(`${DC_API}/v1/lead?date_from=${dateStr}&date_to=${dateStr}&limit=1000`, {headers:h});
+        if(lR.ok){
+          const lD = await lR.json();
+          const pl = lD.payload || lD;
+          const it = pl.items || pl.list || pl.data || (Array.isArray(pl) ? pl : []);
+          let h2 = 0, r2 = 0;
+          it.forEach(lead => {
+            const st = String(lead.status || lead.status_id || lead.state || '').toLowerCase();
+            if(['hold','wait','waiting','on_hold','pending','2'].includes(st)) h2++;
+            else if(['reject','rejected','cancel','cancelled','canceled','refuse','refused',
+                     'decline','declined','revoke','revoked','not_approve','no_approve','3'].includes(st)) r2++;
+          });
+          if(h2 > 0 || r2 > 0){ hold = h2; rejected = r2; }
+        }
+      } catch(e){}
+      return { income, approved, rejected, trash, hold, total };
+    }));
+    const ok = settled.filter(r => r.status === 'fulfilled').map(r => r.value);
+    if(!ok.length) return;
+    const prevStored = allData[dateStr] || { spend:0, income:0, leads:{total:0,approved:0,rejected:0,trash:0,hold:0}, drCash:[], topOffers:[] };
+    allData[dateStr] = {
+      ...prevStored,
+      income: ok.reduce((s,r) => s+r.income,   0),
+      leads: {
+        total:    ok.reduce((s,r) => s+r.total,    0),
+        approved: ok.reduce((s,r) => s+r.approved, 0),
+        rejected: ok.reduce((s,r) => s+r.rejected, 0),
+        trash:    ok.reduce((s,r) => s+r.trash,    0),
+        hold:     ok.reduce((s,r) => s+r.hold,     0),
+      },
+    };
+    saveData();
+    renderDashboard();
+  } catch(e){ console.error('[fetchDayData]', e); }
 }
 
 async function fetchLiveData(){
@@ -2567,6 +2637,14 @@ async function fetchLiveData(){
       hold:     yResults.reduce((s,r) => s+r.hold,     0),
       total:    yResults.reduce((s,r) => s+r.total,    0),
     };
+
+    /* persist yesterday data so the Yesterday tab can render it without a separate fetch */
+    {
+      const prevCk = dkey(prev);
+      const prevStored = allData[prevCk] || { spend:0, income:0, leads:{total:0,approved:0,rejected:0,trash:0,hold:0}, drCash:[], topOffers:[] };
+      allData[prevCk] = { ...prevStored, income: YESTERDAY_LIVE.income, leads: { ...YESTERDAY_LIVE.leads } };
+      saveData();
+    }
 
     /* also pull TikTok spend if connected */
     if(conns['tiktok'] && conns['tiktok'].token){
