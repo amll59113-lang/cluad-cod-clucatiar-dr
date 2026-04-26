@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:docs.dr.cash)",
+      "WebFetch(domain:blog.dr.cash)"
+    ]
+  }
+}

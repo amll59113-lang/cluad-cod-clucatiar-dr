@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://dr.cash\" --max-time 10)",
+      "Bash(curl -s -o /tmp/r1.json -w 'HTTP %{http_code}' https://api.dr.cash/v1/statistics -H 'Authorization: Bearer ZJK2ZTQ2NWETZTM4YS00MJU1LTK1ODQTNDM2NGM2NTAXMDUY' --max-time 8)",
+      "Bash(curl -s -o /tmp/r2.json -w 'HTTP %{http_code}' https://dr.cash/api/v1/webmaster/statistics -H 'Authorization: Bearer ZJK2ZTQ2NWETZTM4YS00MJU1LTK1ODQTNDM2NGM2NTAXMDUY' --max-time 8)",
+      "Bash(curl -s -o /tmp/r3.json -w 'HTTP %{http_code}' https://partners.dr.cash/api/v1/statistics -H 'Authorization: Bearer ZJK2ZTQ2NWETZTM4YS00MJU1LTK1ODQTNDM2NGM2NTAXMDUY' --max-time 8)",
+      "Bash(curl -s -o /tmp/r4.json -w 'HTTP %{http_code}' 'https://api.dr.cash/statistics?token=ZJK2ZTQ2NWETZTM4YS00MJU1LTK1ODQTNDM2NGM2NTAXMDUY' --max-time 8)"
+    ]
+  }
+}
