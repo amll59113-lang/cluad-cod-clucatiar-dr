@@ -2305,16 +2305,18 @@ async function fetchLiveData(){
       const h = {'Authorization':`Bearer ${token}`,'Accept':'application/json'};
 
       /* CORE fetch — income/leads/balance — must never fail */
-      const [rOrder, rFin, rBal, rMonth] = await Promise.all([
+      const [rOrder, rFin, rBal, rMonth, rStat] = await Promise.all([
         fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${date}&date_to=${date}`, {headers:h}),
         fetch(`${DC_API}/v1/chart/finance?scale=2&date_from=${date}&date_to=${date}`, {headers:h}),
         fetch(`${DC_API}/v1/balance`, {headers:h}),
         fetch(`${DC_API}/v1/chart/finance?scale=2&date_from=${monthStart}&date_to=${date}`, {headers:h}),
+        fetch(`${DC_API}/v1/stat/general?date_from=${date}&date_to=${date}`, {headers:h}),
       ]);
       const oData = await rOrder.json();
       const fData = await rFin.json();
       const bData = await rBal.json();
       const mData = await rMonth.json();
+      const sData = await rStat.json();
 
       const op   = oData.payload || {};
       const opKeys = Object.keys(op);
@@ -2335,39 +2337,50 @@ async function fetchLiveData(){
       /* Real total = validTotal + trash (op.valid already includes approved) */
       const total = validTotal + trash;
 
-      /* Step 1: try to get hold + rejected directly from chart/order keys */
-      let hold     = pick(op.hold    || op.wait    || op.waiting, day) || 0;
-      let rejected = pick(op.reject  || op.refuse  || op.refused || op.cancel || op.cancelled, day) || 0;
-      console.log(`[DC ${id}] chart/order direct — hold=${hold} rejected=${rejected}`);
+      /* Step 1: try /v1/stat/general — most reliable source for hold+rejected */
+      let hold = 0, rejected = 0;
+      try {
+        const sp = sData.payload || sData;
+        const statItems = Array.isArray(sp) ? sp : (sp.items || sp.list || sp.data || (sp && typeof sp==='object' ? [sp] : []));
+        const sumStat = key => statItems.reduce((s,x) => s + (parseFloat(x[key])||0), 0);
+        const statKeys = statItems.length > 0 ? Object.keys(statItems[0]) : [];
+        console.log(`[DC ${id}] stat/general keys:`, statKeys.join(', '));
+        statItems.forEach(x => console.log(`[DC ${id}] stat row:`, JSON.stringify(x)));
+        hold     = sumStat('hold') || sumStat('wait') || sumStat('waiting') || 0;
+        rejected = sumStat('refuse') || sumStat('reject') || sumStat('rejected') || sumStat('cancel') || 0;
+        console.log(`[DC ${id}] stat/general — hold=${hold} rejected=${rejected}`);
+      } catch(e) {
+        console.log(`[DC ${id}] stat/general parse error:`, e.message||e);
+      }
 
-      /* Step 2: if chart/order doesn't have them, try /v1/lead per-item scan */
+      /* Step 2: fallback — try chart/order keys */
+      if(hold === 0 && rejected === 0){
+        hold     = pick(op.hold || op.wait || op.waiting, day) || 0;
+        rejected = pick(op.reject || op.refuse || op.refused || op.cancel, day) || 0;
+        console.log(`[DC ${id}] chart/order fallback — hold=${hold} rejected=${rejected}`);
+      }
+
+      /* Step 3: fallback — scan /v1/lead individually */
       if(hold === 0 && rejected === 0){
         try {
-          const lResp = await fetch(
-            `${DC_API}/v1/lead?date_from=${date}&date_to=${date}&limit=1000`,
-            {headers: h}
-          );
+          const lResp = await fetch(`${DC_API}/v1/lead?date_from=${date}&date_to=${date}&limit=1000`, {headers:h});
           if(lResp.ok){
             const lData = await lResp.json();
             const pl = lData.payload || lData;
             const items = pl.items || pl.list || pl.data || (Array.isArray(pl) ? pl : []);
-            if(items.length > 0){
-              items.forEach(lead => {
-                const st = String(lead.status || lead.status_id || lead.state || '').toLowerCase();
-                if(['hold','wait','waiting','on_hold','pending','2'].includes(st)) hold++;
-                else if(['reject','rejected','cancel','cancelled','canceled',
-                         'refuse','refused','decline','declined','revoke','revoked',
-                         'not_approve','no_approve','3'].includes(st)) rejected++;
-              });
-              console.log(`[DC ${id}] /v1/lead scan — hold=${hold} rejected=${rejected} items=${items.length}`);
-            }
+            items.forEach(lead => {
+              const st = String(lead.status || lead.status_id || lead.state || '').toLowerCase();
+              if(['hold','wait','waiting','on_hold','pending','2'].includes(st)) hold++;
+              else if(['reject','rejected','cancel','cancelled','canceled',
+                       'refuse','refused','decline','declined','revoke','revoked',
+                       'not_approve','no_approve','3'].includes(st)) rejected++;
+            });
+            console.log(`[DC ${id}] /v1/lead scan — hold=${hold} rejected=${rejected} items=${items.length}`);
           }
-        } catch(e) {
-          console.log(`[DC ${id}] /v1/lead blocked:`, e.message||e);
-        }
+        } catch(e){ console.log(`[DC ${id}] /v1/lead blocked:`, e.message||e); }
       }
 
-      /* Step 3: last fallback — only put remainder in hold, never mask rejected */
+      /* Step 4: absolute last resort — remainder goes to hold */
       if(hold === 0 && rejected === 0 && validTotal > approved){
         hold = validTotal - approved;
       }
