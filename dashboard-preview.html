@@ -2573,38 +2573,43 @@ async function fetchLiveData(){
       const avail    = (balItems.find(b=>b.type===0&&b.currency==='USD')||{}).sum || 0;
       const pend     = (balItems.find(b=>b.type===1&&b.currency==='USD')||{}).sum || 0;
 
-      /* OFFERS — try multiple endpoints, log result for debugging */
+      /* OFFERS — /v1/chart/offer follows same pattern as /v1/chart/order (CORS-safe) */
       let offers = [];
-      const offerEndpoints = [
-        `${DC_API}/v1/stat/offer?date_from=${monthStart}&date_to=${date}&limit=100`,
-        `${DC_API}/v1/offer/stat?date_from=${monthStart}&date_to=${date}&limit=100`,
-        `${DC_API}/v1/report/offer?date_from=${monthStart}&date_to=${date}&limit=100`,
-        `${DC_API}/v1/stat?date_from=${monthStart}&date_to=${date}&group_by=offer&limit=100`,
+      const offerUrls = [
+        `${DC_API}/v1/chart/offer?scale=3&date_from=${monthStart}&date_to=${date}`,
+        `${DC_API}/v1/offer?date_from=${monthStart}&date_to=${date}&limit=200`,
+        `${DC_API}/v1/offer/list?date_from=${monthStart}&date_to=${date}&limit=200`,
       ];
-      for(const offUrl of offerEndpoints){
+      for(const offUrl of offerUrls){
         try {
           const offResp = await fetch(offUrl, {headers: h});
           const offData = await offResp.json();
-          console.log(`[DC ${id}] offer endpoint ${offUrl.split('/v1/')[1].split('?')[0]} → status=${offResp.status}`, JSON.stringify(offData).slice(0,200));
+          console.log(`[DC ${id}] offer try ${offUrl.split('/v1/')[1].split('?')[0]} status=${offResp.status}`, JSON.stringify(offData).slice(0,300));
           if(!offResp.ok) continue;
           const pl = offData.payload || offData.data || offData || {};
+          /* chart/offer returns {offers:[{offer:{name},approve:[],valid:[],profit:[]}]} */
           const offItems = Array.isArray(pl) ? pl
-                         : (pl.items || pl.list || pl.data || pl.offers || []);
+                         : (pl.offers || pl.items || pl.list || pl.data || []);
           if(!offItems.length) continue;
-          const parseN = v => parseFloat(v) || 0;
+          const sumArr = arr => (!arr||!arr.length) ? 0 : arr.reduce((s,x)=>s+(Number(x.value)||0),0);
+          const parseN  = v => parseFloat(v)||0;
           offers = offItems.map(o => {
             const offerObj = o.offer || o.offer_info || {};
+            /* chart-style: arrays with summing; flat-style: plain numbers */
+            const approved = Array.isArray(o.approve||o.approved) ? sumArr(o.approve||o.approved) : parseN(o.approve||o.approved);
+            const hold     = Array.isArray(o.valid||o.hold)       ? sumArr(o.valid||o.hold)       : parseN(o.valid||o.hold);
+            const trash    = Array.isArray(o.trash)               ? sumArr(o.trash)               : parseN(o.trash);
+            const rejected = Array.isArray(o.reject||o.rejected)  ? sumArr(o.reject||o.rejected)  : parseN(o.reject||o.rejected);
+            const earn     = Array.isArray(o.profit||o.revenue)   ? sumArr(o.profit||o.revenue)   : parseN(o.profit||o.revenue||o.income||o.earn);
             return {
               name:     offerObj.name || o.offer_name || o.name || o.title || `Offer #${o.offer_id||o.id||'?'}`,
               net:      'DR.CASH',
-              leads:    parseN(o.approve||o.approved||0) + parseN(o.valid||o.hold||0) + parseN(o.trash||0) + parseN(o.reject||o.rejected||0),
-              approved: parseN(o.approve || o.approved),
-              hold:     parseN(o.valid   || o.hold),
-              earn:     parseN(o.profit  || o.revenue || o.income || o.earn),
+              leads:    approved + hold + trash + rejected,
+              approved, hold, earn,
             };
           }).filter(o => o.leads > 0 || o.earn > 0);
-          if(offers.length) break; /* found working endpoint */
-        } catch(e) { console.log(`[DC ${id}] offer fetch failed:`, e.message); }
+          if(offers.length){ console.log(`[DC ${id}] offers found: ${offers.length}`); break; }
+        } catch(e){ console.log(`[DC ${id}] offer url failed:`, e.message); }
       }
 
       return { id, income, approved, rejected, trash, hold, total, monthly, avail, pend, offers };
