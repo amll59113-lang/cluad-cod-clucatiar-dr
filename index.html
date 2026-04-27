@@ -216,6 +216,13 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .brk-stat-trash{background:rgba(139,92,246,.08);border-radius:8px}
 .brk-stat-trash .brk-stat-lbl{color:var(--t3)}
 .brk-stat-trash .brk-stat-val{color:var(--t2)!important}
+.off-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.off-hdr .sec-title{margin-bottom:0;flex:1}
+.off-hdr .sec-title::after{display:none}
+.off-tabs{display:flex;gap:3px;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:10px;padding:3px;flex-shrink:0}
+.off-tab{background:none;border:none;color:var(--t3);font-size:11.5px;font-weight:600;padding:5px 12px;border-radius:7px;cursor:pointer;transition:all .2s;font-family:inherit;white-space:nowrap}
+.off-tab:hover{color:var(--t2);background:rgba(255,255,255,.07)}
+.off-tab.active{background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(59,130,246,.15));color:var(--t1);border:1px solid rgba(139,92,246,.3)}
 .offer-item{display:flex;align-items:center;gap:16px;padding:15px 20px;background:var(--g5);border:1px solid var(--bd);
   border-radius:14px;margin-bottom:10px;transition:all .3s cubic-bezier(.4,0,.2,1);cursor:default}
 .offer-item:hover{transform:translateX(5px);background:var(--g8);border-color:rgba(139,92,246,.22);box-shadow:0 0 24px rgba(139,92,246,.08)}
@@ -1057,7 +1064,14 @@ body.light .goals-footer{border-top-color:rgba(0,0,0,.07)}
     </div>
 
     <div class="sec-block" id="offersSection">
-      <h2 class="sec-title">🏆 Top Offers by Payout</h2>
+      <div class="off-hdr">
+        <h2 class="sec-title" id="offersSectionTitle">🏆 Top Offers</h2>
+        <div class="off-tabs">
+          <button class="off-tab active" id="offTab-day"   onclick="switchOffTab('day')">Today</button>
+          <button class="off-tab"        id="offTab-week"  onclick="switchOffTab('week')">This Week</button>
+          <button class="off-tab"        id="offTab-month" onclick="switchOffTab('month')">This Month</button>
+        </div>
+      </div>
       <div id="offersContainer"></div>
     </div>
 
@@ -1443,8 +1457,10 @@ const LIVE_DATA = {
   balance: 0.00,
   pending: 0.00,
   leads:   { total: 0, approved: 0, rejected: 0, trash: 0, hold: 0 },
-  drCash:  [],
-  topOffers: [],
+  drCash:       [],
+  topOffers:    [],
+  weekOffers:   [],
+  monthOffers:  [],
   monthlyProfit: 0.00
 };
 
@@ -1755,7 +1771,7 @@ function dcItemClick(netId, e){
   /* full LIVE_DATA wipe — every field — so no stale values from the previous account bleed through */
   LIVE_DATA.income = 0; LIVE_DATA.balance = 0; LIVE_DATA.pending = 0; LIVE_DATA.monthlyProfit = 0;
   LIVE_DATA.leads  = {total:0,approved:0,rejected:0,trash:0,hold:0};
-  LIVE_DATA.drCash = []; LIVE_DATA.topOffers = []; LIVE_DATA.spend = 0;
+  LIVE_DATA.drCash = []; LIVE_DATA.topOffers = []; LIVE_DATA.weekOffers = []; LIVE_DATA.monthOffers = []; LIVE_DATA.spend = 0;
   RANGE_DATA = null;
   updateConnUI();
   renderDashboard(); /* show cleared state immediately — user sees zeros, not stale data, while fetch runs */
@@ -1776,7 +1792,7 @@ function clearDCFilter(){
   filterDC = null;
   LIVE_DATA.income = 0; LIVE_DATA.balance = 0; LIVE_DATA.pending = 0;
   LIVE_DATA.leads  = {total:0,approved:0,rejected:0,trash:0,hold:0};
-  LIVE_DATA.drCash = []; LIVE_DATA.topOffers = [];
+  LIVE_DATA.drCash = []; LIVE_DATA.topOffers = []; LIVE_DATA.weekOffers = []; LIVE_DATA.monthOffers = [];
   RANGE_DATA = null;
   updateConnUI();
   renderDashboard(); /* show cleared/stored state immediately while fetch runs */
@@ -1866,17 +1882,31 @@ function renderBreakdown(accs){
     </div>`).join('');
 }
 
+let curOffTab = 'day';
+function switchOffTab(tab){
+  curOffTab = tab;
+  ['day','week','month'].forEach(t => {
+    const btn = document.getElementById('offTab-'+t);
+    if(btn) btn.classList.toggle('active', t===tab);
+  });
+  const d = LIVE_DATA;
+  const offers = tab==='week' ? d.weekOffers : tab==='month' ? d.monthOffers : d.topOffers;
+  renderOffers(offers, tab);
+}
+
 const RCLS=['r1','r2','r3','r4','r5'],RICO=['🥇','🥈','🥉','4','5'];
-function renderOffers(offers){
+function renderOffers(offers, tab){
+  tab = tab || curOffTab || 'day';
   const el = document.getElementById('offersContainer');
-  const titleEl = document.querySelector('#offersSection .sec-title');
+  const titleEl = document.getElementById('offersSectionTitle');
+  const TAB_TITLE = {day:"🏆 Today's Best Offers", week:'🏆 This Week\'s Best Offers', month:'🏆 This Month\'s Best Offers'};
   if(!offers||!offers.length){
     el.innerHTML='<div style="color:var(--t3);font-size:13px;padding:16px 0">No offer data — connect Dr.Cash and click Refresh</div>';
     if(titleEl) titleEl.textContent = '🏆 Top Offers';
     return;
   }
   const isLive = !!(offers[0]?.isLive);
-  if(titleEl) titleEl.textContent = isLive ? "🏆 Today's Best Offers" : '🏆 Top Offers by CPA Rate';
+  if(titleEl) titleEl.textContent = isLive ? TAB_TITLE[tab] : '🏆 Top Offers by CPA Rate';
   const medals = ['🏆','🥈','🥉'];
   el.innerHTML=offers.slice(0,10).map((o,i)=>{
     const rankLbl = i<3 ? medals[i] : `#${i+1}`;
@@ -2090,7 +2120,8 @@ function renderDashboard(){
   sc('chgCPT',l.trash?sp/l.trash:null,       yl&&yl.trash?yest.spend/yl.trash:null);
 
   renderBreakdown(d.drCash||[]);
-  renderOffers(d.topOffers||[]);
+  const _offSrc = curOffTab==='week' ? (d.weekOffers||d.topOffers||[]) : curOffTab==='month' ? (d.monthOffers||d.topOffers||[]) : (d.topOffers||[]);
+  renderOffers(_offSrc, curOffTab);
   renderWeekCard();
 
   /* pre-fill Update Day Data fields with current live values */
@@ -2577,55 +2608,64 @@ async function fetchLiveData(){
       const avail    = (balItems.find(b=>b.type===0&&b.currency==='USD')||{}).sum || 0;
       const pend     = (balItems.find(b=>b.type===1&&b.currency==='USD')||{}).sum || 0;
 
-      /* OFFERS — try real per-offer performance from /v1/lead, fall back to catalog */
-      let offers = [];
+      /* OFFERS — fetch today / week / month in parallel */
+      const weekStartStr  = dkey(getWeekStart(TODAY));
+      const monthStartStr = `${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}-01`;
+
+      const parseLeads = (data) => {
+        const pl = data.payload || data;
+        const items = pl.items || pl.list || pl.data || (Array.isArray(pl) ? pl : []);
+        if(!items.length) return [];
+        const ofMap = {};
+        items.forEach(lead => {
+          const name = lead.offer?.name || lead.offer_name || lead.offer_title || `Offer #${lead.offer_id||'?'}`;
+          const geo  = lead.geo_code || lead.geo || lead.country || '';
+          if(!ofMap[name]) ofMap[name] = {name, net:'DR.CASH', leads:0, approved:0, hold:0, earn:0, geo, isLive:true};
+          ofMap[name].leads++;
+          const st = Number(lead.status);
+          if(st===1){ ofMap[name].approved++; ofMap[name].earn += parseFloat(lead.payout||lead.income||0); }
+          else if(st===3){ ofMap[name].hold++; }
+        });
+        return Object.values(ofMap).sort((a,b) => b.earn-a.earn || b.approved-a.approved);
+      };
+
+      let offersDay=[], offersWeek=[], offersMonth=[];
       try {
-        const leadResp = await fetch(`${DC_API}/v1/lead?date_from=${date}&date_to=${date}&per_page=500`, {headers: h});
-        const leadData = await leadResp.json();
-        if(leadResp.ok){
-          const pl = leadData.payload || leadData;
-          const items = pl.items || pl.list || pl.data || (Array.isArray(pl) ? pl : []);
-          console.log(`[DC ${id}] /v1/lead → ${items.length} items, sample:`, JSON.stringify(items[0]||{}).slice(0,200));
-          if(items.length > 0){
-            const ofMap = {};
-            items.forEach(lead => {
-              const name = lead.offer?.name || lead.offer_name || lead.offer_title || `Offer #${lead.offer_id||'?'}`;
-              const geo  = lead.geo_code || lead.geo || lead.country || '';
-              if(!ofMap[name]) ofMap[name] = {name, net:'DR.CASH', leads:0, approved:0, hold:0, earn:0, geo, isLive:true};
-              ofMap[name].leads++;
-              const st = Number(lead.status);
-              if(st===1){ ofMap[name].approved++; ofMap[name].earn += parseFloat(lead.payout||lead.income||0); }
-              else if(st===3){ ofMap[name].hold++; }
-            });
-            offers = Object.values(ofMap).sort((a,b) => b.earn-a.earn || b.approved-a.approved);
-          }
-        }
+        const [rdDay, rdWeek, rdMonth] = await Promise.allSettled([
+          fetch(`${DC_API}/v1/lead?date_from=${date}&date_to=${date}&per_page=500`,         {headers:h}),
+          fetch(`${DC_API}/v1/lead?date_from=${weekStartStr}&date_to=${date}&per_page=1000`, {headers:h}),
+          fetch(`${DC_API}/v1/lead?date_from=${monthStartStr}&date_to=${date}&per_page=2000`,{headers:h}),
+        ]);
+        if(rdDay.status==='fulfilled'   && rdDay.value.ok)   offersDay   = parseLeads(await rdDay.value.json());
+        if(rdWeek.status==='fulfilled'  && rdWeek.value.ok)  offersWeek  = parseLeads(await rdWeek.value.json());
+        if(rdMonth.status==='fulfilled' && rdMonth.value.ok) offersMonth = parseLeads(await rdMonth.value.json());
+        console.log(`[DC ${id}] offers day=${offersDay.length} week=${offersWeek.length} month=${offersMonth.length}`);
       } catch(e){ console.log('[offers] lead fetch failed:', e.message); }
 
-      /* fallback: offer catalog sorted by CPA rate */
-      if(!offers.length){
+      /* fallback catalog if all periods empty */
+      if(!offersDay.length && !offersWeek.length && !offersMonth.length){
         try {
           const offResp = await fetch(`${DC_API}/v1/offer?limit=50`, {headers: h});
           const offData = await offResp.json();
           if(offResp.ok){
             const pl    = offData.payload || offData || {};
             const items = pl.items || pl.list || (Array.isArray(pl) ? pl : []);
-            offers = items
+            const catalog = items
               .map(o => ({
-                name:     o.name || o.title || o.description || `Offer #${o.id||'?'}`,
-                net:      'DR.CASH',
-                leads:    0, approved: 0, hold: 0,
-                earn:     parseFloat(o.payout || o.cpa || o.rate || o.price || 0) || 0,
-                geo:      (o.geo_code || o.geo || []).join(', '),
-                isLive:   false,
+                name:   o.name || o.title || o.description || `Offer #${o.id||'?'}`,
+                net:    'DR.CASH', leads:0, approved:0, hold:0,
+                earn:   parseFloat(o.payout||o.cpa||o.rate||o.price||0)||0,
+                geo:    (o.geo_code||o.geo||[]).join(', '),
+                isLive: false,
               }))
               .filter(o => o.earn > 0)
-              .sort((a, b) => b.earn - a.earn);
+              .sort((a,b) => b.earn - a.earn);
+            offersDay = offersWeek = offersMonth = catalog;
           }
         } catch(e){ /* silent */ }
       }
 
-      return { id, income, approved, rejected, trash, hold, total, monthly, avail, pend, offers };
+      return { id, income, approved, rejected, trash, hold, total, monthly, avail, pend, offersDay, offersWeek, offersMonth };
     }));
 
     /* collect only the accounts that succeeded; warn on failures */
@@ -2646,18 +2686,18 @@ async function fetchLiveData(){
     const totalAvail    = results.reduce((s,r) => s+r.avail,    0);
     const totalPend     = results.reduce((s,r) => s+r.pend,     0);
 
-    /* merge Dr.Cash offers */
-    const offerMap = {};
-    results.forEach(r => (r.offers||[]).forEach(o => {
-      if(!offerMap[o.name]) offerMap[o.name] = {...o};
-      else {
-        offerMap[o.name].leads    += o.leads;
-        offerMap[o.name].approved += o.approved;
-        offerMap[o.name].hold     += o.hold;
-        offerMap[o.name].earn     += o.earn;
-      }
-    }));
-    const allOffers = Object.values(offerMap).sort((a,b) => b.earn - a.earn);
+    /* merge Dr.Cash offers for all 3 periods */
+    const mergeOffersArr = (key) => {
+      const m = {};
+      results.forEach(r => (r[key]||[]).forEach(o => {
+        if(!m[o.name]) m[o.name] = {...o};
+        else { m[o.name].leads+=o.leads; m[o.name].approved+=o.approved; m[o.name].hold+=o.hold; m[o.name].earn+=o.earn; }
+      }));
+      return Object.values(m).sort((a,b) => b.earn-a.earn || b.approved-a.approved);
+    };
+    const allOffersDay   = mergeOffersArr('offersDay');
+    const allOffersWeek  = mergeOffersArr('offersWeek');
+    const allOffersMonth = mergeOffersArr('offersMonth');
 
     /* ── AdCombo — fetch and merge into grand totals (aggregate mode only, not per-account filter) ── */
     let acResult = null;
@@ -2704,7 +2744,9 @@ async function fetchLiveData(){
                        trash:acResult.trash, hold:acResult.hold });
     }
     LIVE_DATA.drCash = breakdown;
-    if(allOffers.length > 0) LIVE_DATA.topOffers = allOffers;
+    if(allOffersDay.length   > 0) LIVE_DATA.topOffers   = allOffersDay;
+    if(allOffersWeek.length  > 0) LIVE_DATA.weekOffers  = allOffersWeek;
+    if(allOffersMonth.length > 0) LIVE_DATA.monthOffers = allOffersMonth;
     console.log(`[Grand] income=${grandIncome} leads=${grandLeads} (DC=${totalLeads} AC=${acResult?acResult.total:0})`);
 
     /* fetch yesterday for all accounts and aggregate for change arrows */
