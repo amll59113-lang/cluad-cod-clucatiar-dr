@@ -2575,40 +2575,33 @@ async function fetchLiveData(){
 
       /* OFFERS — /v1/chart/offer follows same pattern as /v1/chart/order (CORS-safe) */
       let offers = [];
-      const offerUrls = [
-        `${DC_API}/v1/offer?date_from=${monthStart}&date_to=${date}&limit=50`,
-      ];
-      for(const offUrl of offerUrls){
-        try {
-          const offResp = await fetch(offUrl, {headers: h});
-          const offData = await offResp.json();
-          console.log(`[DC ${id}] offer try ${offUrl.split('/v1/')[1].split('?')[0]} status=${offResp.status}`, JSON.stringify(offData).slice(0,300));
-          if(!offResp.ok) continue;
-          const pl = offData.payload || offData.data || offData || {};
-          /* chart/offer returns {offers:[{offer:{name},approve:[],valid:[],profit:[]}]} */
-          const offItems = Array.isArray(pl) ? pl
-                         : (pl.offers || pl.items || pl.list || pl.data || []);
-          if(!offItems.length) continue;
-          const sumArr = arr => (!arr||!arr.length) ? 0 : arr.reduce((s,x)=>s+(Number(x.value)||0),0);
-          const parseN  = v => parseFloat(v)||0;
-          offers = offItems.map(o => {
-            const offerObj = o.offer || o.offer_info || {};
-            /* chart-style: arrays with summing; flat-style: plain numbers */
-            const approved = Array.isArray(o.approve||o.approved) ? sumArr(o.approve||o.approved) : parseN(o.approve||o.approved);
-            const hold     = Array.isArray(o.valid||o.hold)       ? sumArr(o.valid||o.hold)       : parseN(o.valid||o.hold);
-            const trash    = Array.isArray(o.trash)               ? sumArr(o.trash)               : parseN(o.trash);
-            const rejected = Array.isArray(o.reject||o.rejected)  ? sumArr(o.reject||o.rejected)  : parseN(o.reject||o.rejected);
-            const earn     = Array.isArray(o.profit||o.revenue)   ? sumArr(o.profit||o.revenue)   : parseN(o.profit||o.revenue||o.income||o.earn);
-            return {
-              name:     offerObj.name || o.offer_name || o.name || o.title || `Offer #${o.offer_id||o.id||'?'}`,
-              net:      'DR.CASH',
-              leads:    approved + hold + trash + rejected,
-              approved, hold, earn,
-            };
-          }).filter(o => o.leads > 0 || o.earn > 0);
-          if(offers.length){ console.log(`[DC ${id}] offers found: ${offers.length}`); break; }
-        } catch(e){ console.log(`[DC ${id}] offer url failed:`, e.message); }
-      }
+      /* OFFERS — fetch individual orders for today, group by offer name */
+      try {
+        const ordResp = await fetch(
+          `${DC_API}/v1/order?date_from=${date}&date_to=${date}&limit=50&page=1`,
+          {headers: h}
+        );
+        const ordData = await ordResp.json();
+        console.log(`[DC ${id}] orders for offers status=${ordResp.status}`, JSON.stringify(ordData).slice(0,400));
+        if(ordResp.ok){
+          const pl      = ordData.payload || ordData.data || ordData || {};
+          const items   = pl.items || pl.list || pl.data || (Array.isArray(pl) ? pl : []);
+          const parseN  = v => parseFloat(v) || 0;
+          const offerAgg = {};
+          items.forEach(o => {
+            const name = (o.offer && (o.offer.name || o.offer.title))
+                        || o.offer_name || o.name || `Offer #${o.offer_id||o.id||'?'}`;
+            if(!offerAgg[name]) offerAgg[name] = {name, net:'DR.CASH', leads:0, approved:0, hold:0, earn:0};
+            const st = String(o.status || o.status_id || '').toLowerCase();
+            offerAgg[name].leads++;
+            if(['approve','approved','1'].includes(st))       offerAgg[name].approved++;
+            else if(['hold','valid','pending','2'].includes(st)) offerAgg[name].hold++;
+            offerAgg[name].earn += parseN(o.profit || o.payout || o.revenue || o.earn);
+          });
+          offers = Object.values(offerAgg).sort((a,b) => b.earn - a.earn || b.leads - a.leads);
+          console.log(`[DC ${id}] offers from orders: ${offers.length}`);
+        }
+      } catch(e){ console.log(`[DC ${id}] order-based offers failed:`, e.message); }
 
       return { id, income, approved, rejected, trash, hold, total, monthly, avail, pend, offers };
     }));
