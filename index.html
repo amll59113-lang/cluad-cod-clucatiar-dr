@@ -235,11 +235,14 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .o-tags{display:flex;gap:6px}
 .o-tag{font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:5px;text-transform:uppercase;letter-spacing:.6px}
 .tag-dc{background:rgba(16,185,129,.15);color:var(--grl)}.tag-ac{background:rgba(245,158,11,.15);color:var(--yel)}
-.o-right{display:flex;align-items:center;gap:18px;flex-shrink:0;margin-left:auto}
+.o-right{display:flex;align-items:flex-end;flex-shrink:0;margin-left:auto}
 .o-inline-stats{font-size:13px;color:var(--t2);font-weight:500;white-space:nowrap}
 .o-inline-stats .osg{color:var(--grl);font-weight:700}
 .o-inline-stats .osy{color:var(--yel);font-weight:700}
-.o-earn{font-size:20px;font-weight:900;color:var(--grl);text-align:right;min-width:88px;flex-shrink:0;font-variant-numeric:tabular-nums}
+.o-stats-earn{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+.o-earn{font-size:22px;font-weight:900;color:var(--pul);text-align:right;font-variant-numeric:tabular-nums;line-height:1}
+.o-lead-row{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;white-space:nowrap}
+.olr-leads{color:var(--t2)}.olr-sep{color:var(--t3)}.olr-apr{color:var(--grl);font-weight:700}.olr-hold{color:var(--yel);font-weight:600}
 .o-apr-badge{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:6px}
 .o-apr-good{background:rgba(16,185,129,.15);color:var(--grl)}
 .o-apr-mid{background:rgba(245,158,11,.15);color:var(--yel)}
@@ -1911,9 +1914,6 @@ function renderOffers(offers, tab){
   el.innerHTML=offers.slice(0,5).map((o,i)=>{
     const rankLbl = i<3 ? medals[i] : `#${i+1}`;
     const geo = o.geo ? `<span style="font-size:10px;color:var(--t3);margin-left:6px">${o.geo}</span>` : '';
-    const subLine = isLive
-      ? `<div class="o-inline-stats" style="font-size:12px;color:var(--t2)">${o.leads} leads &nbsp;·&nbsp; <span style="color:var(--grl)">${o.approved} ✓</span> &nbsp;·&nbsp; <span style="color:var(--yel)">${o.hold} hold</span></div>`
-      : `<div class="o-inline-stats" style="color:var(--t3);font-size:12px">CPA Rate</div>`;
     return `
     <div class="offer-item">
       <div class="o-rank ${RCLS[Math.min(i,4)]}">${rankLbl}</div>
@@ -1925,8 +1925,10 @@ function renderOffers(offers, tab){
         </div>
       </div>
       <div class="o-right">
-        ${subLine}
-        <div class="o-earn">${fmoney(o.earn)}</div>
+        <div class="o-stats-earn">
+          <div class="o-earn">${fmoney(o.earn)}</div>
+          <div class="o-lead-row"><span class="olr-leads">${o.leads} leads</span><span class="olr-sep">·</span><span class="olr-apr">${o.approved} ✓</span><span class="olr-sep">·</span><span class="olr-hold">${o.hold} hold</span></div>
+        </div>
       </div>
     </div>`;
   }).join('');
