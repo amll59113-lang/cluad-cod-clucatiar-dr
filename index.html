@@ -2581,9 +2581,6 @@ async function fetchLiveData(){
       /* Real total = validTotal + trash (op.valid already includes approved) */
       const total = validTotal + trash;
 
-      /* hold = remaining valid after approved (rejected comes from stat/offer later) */
-      let hold = 0, rejected = 0;
-      hold = Math.max(0, validTotal - approved);
       const income   = pick((fData.payload||{}).profit, day);
       const monthly  = ((mData.payload||{}).profit||[]).reduce((s,x) => s+(x.value||0), 0);
 
@@ -2591,16 +2588,15 @@ async function fetchLiveData(){
       const avail    = (balItems.find(b=>b.type===0&&b.currency==='USD')||{}).sum || 0;
       const pend     = (balItems.find(b=>b.type===1&&b.currency==='USD')||{}).sum || 0;
 
-      /* OFFERS — real per-offer stats from /v1/stat/offer */
+      /* OFFERS + real hold/rejected — all from /v1/stat/offer */
       const weekStartStr  = dkey(getWeekStart(TODAY));
       const monthStartStr = `${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}-01`;
       const todayStr      = dkey(TODAY);
 
-      function toIso(dateStr, isEnd) {
-        return dateStr + (isEnd ? 'T23:59:59Z' : 'T00:00:00Z');
-      }
-      function parseStatOffers(items) {
-        return (items||[]).map(o => ({
+      const toIso = (dateStr, isEnd) => dateStr + (isEnd ? 'T23:59:59Z' : 'T00:00:00Z');
+
+      const parseStatOffers = (items) =>
+        (items||[]).map(o => ({
           name:     o.offer_name_composite || o.offer_name || o.name || o.title || `Offer #${o.offer_id||o.id||'?'}`,
           net:      'DR.CASH',
           leads:    parseInt(o.order_all||o.leads||o.click_a||0)||0,
@@ -2610,19 +2606,16 @@ async function fetchLiveData(){
           geo:      Array.isArray(o.geo_code||o.geo) ? (o.geo_code||o.geo).join(', ') : (o.geo_code||o.geo||''),
           isLive:   true,
         })).filter(o => o.earn>0||o.approved>0).sort((a,b)=>b.earn-a.earn||b.approved-a.approved);
-      }
+
       const fetchStatOffer = async (ds, de) => {
-        const url = `${DC_API}/v1/stat/offer?currency=USD&date_start=${encodeURIComponent(ds)}&date_end=${encodeURIComponent(de)}&limit=50&sort_by=click_a&sort_type=DESC`;
+        const url = `${DC_API}/v1/stat/offer?currency=USD&date_start=${encodeURIComponent(ds)}&date_end=${encodeURIComponent(de)}&limit=200&sort_by=click_a&sort_type=DESC`;
         const r = await fetch(url, {headers:h});
         const raw = await r.json();
-        const snippet = JSON.stringify(raw).slice(0,400);
-        console.log(`[DC ${id}] stat/offer (${ds.slice(0,10)}) HTTP=${r.status}:`, snippet);
         const pl = raw.payload ?? raw;
-        const items = pl.items ?? pl.list ?? pl.data ?? (Array.isArray(pl) ? pl : []);
-        console.log(`[DC ${id}] stat/offer items count:`, items.length, items[0] ? Object.keys(items[0]).join(',') : 'EMPTY');
-        return items;
+        return pl.items ?? pl.list ?? pl.data ?? (Array.isArray(pl) ? pl : []);
       };
-      let offersDay=[], offersWeek=[], offersMonth=[], rejectedFromOffers=0;
+
+      let offersDay=[], offersWeek=[], offersMonth=[], hold=0, rejected=0;
       try {
         const [dayR, weekR, monthR] = await Promise.allSettled([
           fetchStatOffer(toIso(todayStr, false),      toIso(todayStr, true)),
@@ -2630,21 +2623,16 @@ async function fetchLiveData(){
           fetchStatOffer(toIso(monthStartStr, false), toIso(todayStr, true)),
         ]);
         const dayItems = dayR.status==='fulfilled' ? dayR.value : [];
-        /* sum order_rejected from today's offer stats — this is the real rejected count */
-        rejectedFromOffers = dayItems.reduce((s,o) => s + (parseInt(o.order_rejected||0)||0), 0);
+        /* real hold & rejected — summed directly from per-offer data */
+        hold     = dayItems.reduce((s,o) => s + (parseInt(o.order_hold||0)||0),     0);
+        rejected = dayItems.reduce((s,o) => s + (parseInt(o.order_rejected||0)||0), 0);
         offersDay   = parseStatOffers(dayItems);
         offersWeek  = parseStatOffers(weekR.status==='fulfilled'  ? weekR.value  : []);
         offersMonth = parseStatOffers(monthR.status==='fulfilled' ? monthR.value : []);
-        if(dayR.status==='rejected')   console.log('[offers day]',   dayR.reason);
-        if(weekR.status==='rejected')  console.log('[offers week]',  weekR.reason);
-        if(monthR.status==='rejected') console.log('[offers month]', monthR.reason);
-        console.log(`[DC ${id}] stat/offer day:${offersDay.length} week:${offersWeek.length} month:${offersMonth.length} rejected:${rejectedFromOffers}`);
-      } catch(e){ console.log('[offers catch]', e.message, e.stack); }
+        console.log(`[DC ${id}] stat/offer day:${offersDay.length} hold:${hold} rejected:${rejected}`);
+      } catch(e){ console.log('[offers catch]', e.message); }
 
-      /* use rejected from stat/offer (real data) instead of failed endpoint attempts */
-      const finalRejected = rejectedFromOffers || rejected;
-
-      return { id, income, approved, rejected: finalRejected, trash, hold, total, monthly, avail, pend, offersDay, offersWeek, offersMonth };
+      return { id, income, approved, rejected, trash, hold, total, monthly, avail, pend, offersDay, offersWeek, offersMonth };
     }));
 
     /* collect only the accounts that succeeded; warn on failures */
