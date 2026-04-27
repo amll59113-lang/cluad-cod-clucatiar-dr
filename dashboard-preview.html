@@ -1912,8 +1912,8 @@ function renderOffers(offers, tab){
     const rankLbl = i<3 ? medals[i] : `#${i+1}`;
     const geo = o.geo ? `<span style="font-size:10px;color:var(--t3);margin-left:6px">${o.geo}</span>` : '';
     const subLine = isLive
-      ? `<div class="o-inline-stats" style="color:var(--t3);font-size:11px">${o.approved}✓ / ${o.leads} leads</div>`
-      : `<div class="o-inline-stats" style="color:var(--t3);font-size:11px">CPA Rate</div>`;
+      ? `<div class="o-inline-stats" style="font-size:12px;color:var(--t2)">${o.leads} leads &nbsp;·&nbsp; <span style="color:var(--grl)">${o.approved} ✓</span> &nbsp;·&nbsp; <span style="color:var(--yel)">${o.hold} hold</span></div>`
+      : `<div class="o-inline-stats" style="color:var(--t3);font-size:12px">CPA Rate</div>`;
     return `
     <div class="offer-item">
       <div class="o-rank ${RCLS[Math.min(i,4)]}">${rankLbl}</div>
@@ -2608,13 +2608,11 @@ async function fetchLiveData(){
       const avail    = (balItems.find(b=>b.type===0&&b.currency==='USD')||{}).sum || 0;
       const pend     = (balItems.find(b=>b.type===1&&b.currency==='USD')||{}).sum || 0;
 
-      /* OFFERS — fetch today / week / month in parallel */
+      /* OFFERS — paginated fetch for today / week / month (per_page capped at 500) */
       const weekStartStr  = dkey(getWeekStart(TODAY));
       const monthStartStr = `${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}-01`;
 
-      const parseLeads = (data) => {
-        const pl = data.payload || data;
-        const items = pl.items || pl.list || pl.data || (Array.isArray(pl) ? pl : []);
+      const parseLeadsItems = (items) => {
         if(!items.length) return [];
         const ofMap = {};
         items.forEach(lead => {
@@ -2629,16 +2627,35 @@ async function fetchLiveData(){
         return Object.values(ofMap).sort((a,b) => b.earn-a.earn || b.approved-a.approved);
       };
 
+      const extractItems = (settled) => {
+        if(settled.status!=='fulfilled' || !settled.value.ok) return Promise.resolve([]);
+        return settled.value.json().then(d => {
+          const pl = d.payload || d;
+          return pl.items || pl.list || pl.data || (Array.isArray(pl)?pl:[]);
+        }).catch(()=>[]);
+      };
+
       let offersDay=[], offersWeek=[], offersMonth=[];
       try {
-        const [rdDay, rdWeek, rdMonth] = await Promise.allSettled([
-          fetch(`${DC_API}/v1/lead?date_from=${date}&date_to=${date}&per_page=500`,         {headers:h}),
-          fetch(`${DC_API}/v1/lead?date_from=${weekStartStr}&date_to=${date}&per_page=1000`, {headers:h}),
-          fetch(`${DC_API}/v1/lead?date_from=${monthStartStr}&date_to=${date}&per_page=2000`,{headers:h}),
+        /* fire today(1pg) + week(2pg) + month(4pg) all at once — per_page=500 stays within API limits */
+        const reqs = await Promise.allSettled([
+          fetch(`${DC_API}/v1/lead?date_from=${date}&date_to=${date}&page=1&per_page=500`,          {headers:h}),
+          fetch(`${DC_API}/v1/lead?date_from=${weekStartStr}&date_to=${date}&page=1&per_page=500`,  {headers:h}),
+          fetch(`${DC_API}/v1/lead?date_from=${weekStartStr}&date_to=${date}&page=2&per_page=500`,  {headers:h}),
+          fetch(`${DC_API}/v1/lead?date_from=${monthStartStr}&date_to=${date}&page=1&per_page=500`, {headers:h}),
+          fetch(`${DC_API}/v1/lead?date_from=${monthStartStr}&date_to=${date}&page=2&per_page=500`, {headers:h}),
+          fetch(`${DC_API}/v1/lead?date_from=${monthStartStr}&date_to=${date}&page=3&per_page=500`, {headers:h}),
+          fetch(`${DC_API}/v1/lead?date_from=${monthStartStr}&date_to=${date}&page=4&per_page=500`, {headers:h}),
         ]);
-        if(rdDay.status==='fulfilled'   && rdDay.value.ok)   offersDay   = parseLeads(await rdDay.value.json());
-        if(rdWeek.status==='fulfilled'  && rdWeek.value.ok)  offersWeek  = parseLeads(await rdWeek.value.json());
-        if(rdMonth.status==='fulfilled' && rdMonth.value.ok) offersMonth = parseLeads(await rdMonth.value.json());
+        const [d1, w1,w2, m1,m2,m3,m4] = reqs;
+        const [iDay, iW1,iW2, iM1,iM2,iM3,iM4] = await Promise.all([
+          extractItems(d1),
+          extractItems(w1), extractItems(w2),
+          extractItems(m1), extractItems(m2), extractItems(m3), extractItems(m4),
+        ]);
+        offersDay   = parseLeadsItems(iDay);
+        offersWeek  = parseLeadsItems([...iW1,...iW2]);
+        offersMonth = parseLeadsItems([...iM1,...iM2,...iM3,...iM4]);
         console.log(`[DC ${id}] offers day=${offersDay.length} week=${offersWeek.length} month=${offersMonth.length}`);
       } catch(e){ console.log('[offers] lead fetch failed:', e.message); }
 
