@@ -233,6 +233,25 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .o-inline-stats .osg{color:var(--grl);font-weight:700}
 .o-inline-stats .osy{color:var(--yel);font-weight:700}
 .o-earn{font-size:20px;font-weight:900;color:var(--grl);text-align:right;min-width:88px;flex-shrink:0;font-variant-numeric:tabular-nums}
+.o-apr-badge{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:6px}
+.o-apr-good{background:rgba(16,185,129,.15);color:var(--grl)}
+.o-apr-mid{background:rgba(245,158,11,.15);color:var(--yel)}
+.o-apr-low{background:rgba(239,68,68,.15);color:var(--rel)}
+/* ── Weekly Summary Card ── */
+.week-card{background:var(--g5);border:1px solid var(--bd);border-radius:18px;
+  padding:18px 22px 16px;margin-bottom:14px;position:relative;overflow:hidden}
+.week-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(16,185,129,.35),rgba(59,130,246,.35),transparent)}
+.week-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.week-ttl{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.8px}
+.week-range{font-size:12px;color:var(--t2);font-weight:500}
+.week-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:0}
+.week-stat{text-align:center;padding:0 8px;border-right:1px solid rgba(255,255,255,.05)}
+.week-stat:last-child{border-right:none}
+.week-stat-lbl{font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.week-stat-val{font-size:18px;font-weight:800;color:var(--t1);font-variant-numeric:tabular-nums}
+.week-prog-wrap{margin-top:14px;height:3px;background:rgba(255,255,255,.06);border-radius:2px}
+.week-prog-fill{height:100%;background:linear-gradient(90deg,var(--gr),var(--bl));border-radius:2px;transition:width .7s ease}
 .input-sec{background:var(--g5);border:1px solid var(--bd);border-radius:22px;padding:22px 24px;margin-bottom:16px}
 .input-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}
 .form-grp{display:flex;flex-direction:column;gap:7px}
@@ -1001,13 +1020,44 @@ body.light .goals-footer{border-top-color:rgba(0,0,0,.07)}
 
     <div class="glow-div" id="div1"></div>
 
+    <!-- ── Weekly Summary Card ── -->
+    <div class="week-card fu" id="weekSection">
+      <div class="week-hdr">
+        <span class="week-ttl">🗓️ Week Summary</span>
+        <span class="week-range" id="weekRange">Mon — Sun</span>
+      </div>
+      <div class="week-stats">
+        <div class="week-stat">
+          <div class="week-stat-lbl">Income</div>
+          <div class="week-stat-val" id="wkIncome" style="color:var(--pul)">$0</div>
+        </div>
+        <div class="week-stat">
+          <div class="week-stat-lbl">Spend</div>
+          <div class="week-stat-val" id="wkSpend" style="color:var(--orl)">$0</div>
+        </div>
+        <div class="week-stat">
+          <div class="week-stat-lbl">Profit</div>
+          <div class="week-stat-val" id="wkProfit" style="color:var(--grl)">$0</div>
+        </div>
+        <div class="week-stat">
+          <div class="week-stat-lbl">Leads</div>
+          <div class="week-stat-val" id="wkLeads">0</div>
+        </div>
+        <div class="week-stat">
+          <div class="week-stat-lbl">Approved</div>
+          <div class="week-stat-val" id="wkApproved" style="color:var(--grl)">0</div>
+        </div>
+      </div>
+      <div class="week-prog-wrap"><div class="week-prog-fill" id="weekProgFill" style="width:0%"></div></div>
+    </div>
+
     <div class="sec-block" id="brkSection">
       <h2 class="sec-title">💊 Dr.Cash Breakdown</h2>
       <div id="brkContainer"></div>
     </div>
 
     <div class="sec-block" id="offersSection">
-      <h2 class="sec-title">🏆 Top 5 Offers</h2>
+      <h2 class="sec-title">🏆 Offer Performance Ranking</h2>
       <div id="offersContainer"></div>
     </div>
 
@@ -1820,15 +1870,23 @@ const RCLS=['r1','r2','r3','r4','r5'],RICO=['🥇','🥈','🥉','4','5'];
 function renderOffers(offers){
   const el = document.getElementById('offersContainer');
   if(!offers||!offers.length){
-    el.innerHTML='<div style="color:var(--t3);font-size:13px;padding:16px 0">No offer data yet — click Refresh Live Data</div>';
+    el.innerHTML='<div style="color:var(--t3);font-size:13px;padding:16px 0">No offer data — connect Dr.Cash and click Refresh</div>';
     return;
   }
-  el.innerHTML=offers.slice(0,5).map((o,i)=>`
+  const medals = ['🏆','🥈','🥉'];
+  el.innerHTML=offers.slice(0,10).map((o,i)=>{
+    const apr = o.leads>0 ? Math.round(o.approved/o.leads*100) : 0;
+    const aprCls = apr>=60?'o-apr-good':apr>=30?'o-apr-mid':'o-apr-low';
+    const rankLbl = i<3 ? medals[i] : `#${i+1}`;
+    return `
     <div class="offer-item">
-      <div class="o-rank ${RCLS[i]}">${i===0?'🏆':i+1}</div>
+      <div class="o-rank ${RCLS[Math.min(i,4)]}">${rankLbl}</div>
       <div class="o-info">
         <div class="o-name">${o.name}</div>
-        <div class="o-tags"><span class="o-tag ${o.net==='ADCOMBO'?'tag-ac':'tag-dc'}">${o.net||'DR.CASH'}</span></div>
+        <div class="o-tags">
+          <span class="o-tag ${o.net==='ADCOMBO'?'tag-ac':'tag-dc'}">${o.net||'DR.CASH'}</span>
+          <span class="o-apr-badge ${aprCls}">${apr}% approved</span>
+        </div>
       </div>
       <div class="o-right">
         <div class="o-inline-stats">
@@ -1836,7 +1894,48 @@ function renderOffers(offers){
         </div>
         <div class="o-earn">${fmoney(o.earn)}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+}
+
+function getWeekStart(date){
+  const d = new Date(date);
+  const day = d.getDay();
+  d.setDate(d.getDate() + (day===0 ? -6 : 1-day));
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function renderWeekCard(){
+  const mon = getWeekStart(TODAY);
+  const sun = new Date(mon); sun.setDate(sun.getDate()+6);
+  let inc=0, sp=0, leads=0, approved=0, doneCount=0;
+  for(let i=0; i<7; i++){
+    const d = new Date(mon); d.setDate(d.getDate()+i);
+    if(d > TODAY) break;
+    doneCount++;
+    const ck = dkey(d);
+    const isToday2 = ck === dkey(TODAY);
+    const dat = (isToday2 && hasAnyConn()) ? LIVE_DATA : (allData[ck] || null);
+    const sKey = ck+':all', iKey = ck+':all';
+    sp  += spendStore.hasOwnProperty(sKey)  ? spendStore[sKey]  : (dat?.spend   || 0);
+    inc += incomeStore.hasOwnProperty(iKey) ? incomeStore[iKey] : (dat?.income  || 0);
+    if(dat){ leads += (dat.leads?.total||0); approved += (dat.leads?.approved||0); }
+  }
+  const pr = inc - sp;
+  const mf = d => `${MONTHS[d.getMonth()].slice(0,3)} ${d.getDate()}`;
+  document.getElementById('weekRange')?.setAttribute('data-txt',
+    `${mf(mon)} → ${mf(sun)}, ${sun.getFullYear()} · ${doneCount}/7 days`);
+  const wr = document.getElementById('weekRange');
+  if(wr) wr.textContent = `${mf(mon)} → ${mf(sun)}, ${sun.getFullYear()} · ${doneCount}/7 days`;
+  document.getElementById('wkIncome')  && (document.getElementById('wkIncome').textContent  = fmoney(inc));
+  document.getElementById('wkSpend')   && (document.getElementById('wkSpend').textContent   = fmoney(sp));
+  const wpEl = document.getElementById('wkProfit');
+  if(wpEl){ wpEl.textContent = (pr<0?'-':'') + fmoney(Math.abs(pr)); wpEl.style.color = pr>=0?'var(--grl)':'var(--rel)'; }
+  document.getElementById('wkLeads')    && (document.getElementById('wkLeads').textContent    = leads);
+  document.getElementById('wkApproved') && (document.getElementById('wkApproved').textContent = approved);
+  const fill = document.getElementById('weekProgFill');
+  if(fill) fill.style.width = Math.round(doneCount/7*100) + '%';
 }
 
 function renderDashboard(){
@@ -1884,7 +1983,7 @@ function renderDashboard(){
   }
   if(!d && isToday && !multi) d={spend:0,income:0,leads:{total:0,approved:0,rejected:0,trash:0,hold:0},drCash:[],topOffers:[]};
 
-  const sections=['mainContent','leadsGrid','costGrid','div1','brkSection','offersSection','div2'];
+  const sections=['mainContent','leadsGrid','costGrid','div1','weekSection','brkSection','offersSection','div2'];
   /* hide single-day entry form in multi-day view */
   const inputSec = document.querySelector('.input-sec');
   if(inputSec) inputSec.style.display = multi ? 'none' : '';
@@ -1988,6 +2087,7 @@ function renderDashboard(){
 
   renderBreakdown(d.drCash||[]);
   renderOffers(d.topOffers||[]);
+  renderWeekCard();
 
   /* pre-fill Update Day Data fields with current live values */
   if(!multi){
