@@ -2694,50 +2694,23 @@ async function fetchLiveData(){
 
     /* fetch yesterday for all accounts and aggregate for change arrows */
     const prev = new Date(TODAY); prev.setDate(prev.getDate()-1);
-    const prevDay  = String(prev.getDate());
     const prevDate = dkey(prev);
+    const prevPrev = new Date(prev); prevPrev.setDate(prevPrev.getDate()-1);
+    const yDs = `${prevPrev.getFullYear()}-${String(prevPrev.getMonth()+1).padStart(2,'0')}-${String(prevPrev.getDate()).padStart(2,'0')}T23:00:00Z`;
+    const yDe = `${prev.getFullYear()}-${String(prev.getMonth()+1).padStart(2,'0')}-${String(prev.getDate()).padStart(2,'0')}T22:59:59Z`;
     const yResults = await Promise.all(accounts.map(async ({token}) => {
       const h = {'Authorization':`Bearer ${token}`,'Accept':'application/json'};
-      const [rOP2, rFP2] = await Promise.all([
-        fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${prevDate}&date_to=${prevDate}`,{headers:h}),
-        fetch(`${DC_API}/v1/chart/finance?scale=2&date_from=${prevDate}&date_to=${prevDate}`,{headers:h}),
-      ]);
-      const op2  = ((await rOP2.json()).payload)||{};
-      const fp2  = ((await rFP2.json()).payload)||{};
-      const app2   = pick(op2.approve, prevDay);
-      const trash2 = pick(op2.trash,   prevDay);
-      const valid2 = pick(op2.valid,   prevDay); /* same: valid = approve+hold+rejected */
-      const total2 = valid2 + trash2;
-
-      /* Try /v1/lead for yesterday's status breakdown */
-      let hold2 = 0, rej2 = 0;
-      try {
-        const lR2 = await fetch(
-          `${DC_API}/v1/lead?date_from=${prevDate}&date_to=${prevDate}&limit=1000`,
-          {headers:h}
-        );
-        if(lR2.ok){
-          const lD2 = await lR2.json();
-          const pl2 = lD2.payload || lD2;
-          const it2 = pl2.items || pl2.list || pl2.data || (Array.isArray(pl2) ? pl2 : []);
-          it2.forEach(lead => {
-            const st = String(lead.status || lead.status_id || lead.state || '').toLowerCase();
-            if(['hold','wait','waiting','on_hold','pending','2'].includes(st)) hold2++;
-            else if(['reject','rejected','cancel','cancelled','canceled',
-                     'refuse','refused','decline','declined','revoke','revoked',
-                     'not_approve','no_approve','3'].includes(st)) rej2++;
-          });
-        }
-      } catch(e) { /* silent */ }
-      if(hold2 === 0 && rej2 === 0 && valid2 > app2) hold2 = valid2 - app2;
-
+      const url2 = `${DC_API}/v1/stat/date?currency=USD&date_start=${encodeURIComponent(yDs)}&date_end=${encodeURIComponent(yDe)}&limit=2&sort_by=date&sort_type=DESC`;
+      const r2 = await fetch(url2, {headers:h});
+      const raw2 = await r2.json();
+      const row2 = raw2.payload?.total || (raw2.payload?.items||[])[0] || {};
       return {
-        income:   pick(fp2.profit, prevDay),
-        approved: app2,
-        rejected: rej2,
-        trash:    trash2,
-        hold:     hold2,
-        total:    total2,
+        income:   parseFloat(row2.sum_approved  || 0) || 0,
+        approved: parseInt(row2.order_approved  || 0) || 0,
+        hold:     parseInt(row2.order_hold      || 0) || 0,
+        rejected: parseInt(row2.order_rejected  || 0) || 0,
+        trash:    parseInt(row2.order_trash     || 0) || 0,
+        total:    parseInt(row2.order_all       || 0) || 0,
       };
     }));
 
