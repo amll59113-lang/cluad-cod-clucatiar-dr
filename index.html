@@ -2612,29 +2612,45 @@ async function fetchLiveData(){
       const avail    = (balItems.find(b=>b.type===0&&b.currency==='USD')||{}).sum || 0;
       const pend     = (balItems.find(b=>b.type===1&&b.currency==='USD')||{}).sum || 0;
 
-      /* OFFERS — paginated fetch for today / week / month (per_page capped at 500) */
+      /* OFFERS — real per-offer stats from /v1/stat/offer */
       const weekStartStr  = dkey(getWeekStart(TODAY));
       const monthStartStr = `${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}-01`;
+      const todayStr      = dkey(TODAY);
 
-      /* OFFERS — catalog sorted by CPA rate (per-offer live stats not available via affiliate API) */
+      function toIso(dateStr, isEnd) {
+        return dateStr + (isEnd ? 'T23:59:59Z' : 'T00:00:00Z');
+      }
+      function parseStatOffers(items) {
+        return (items||[]).map(o => ({
+          name:     o.name || o.offer_name || o.title || `Offer #${o.offer_id||o.id||'?'}`,
+          net:      'DR.CASH',
+          leads:    parseInt(o.leads||o.click||o.clicks||o.total||0)||0,
+          approved: parseInt(o.approved||o.approve||o.conversions||0)||0,
+          hold:     parseInt(o.hold||0)||0,
+          earn:     parseFloat(o.income||o.revenue||o.profit||o.payout||o.earn||0)||0,
+          geo:      Array.isArray(o.geo_code||o.geo) ? (o.geo_code||o.geo).join(', ') : (o.geo_code||o.geo||''),
+          isLive:   true,
+        })).filter(o => o.earn>0||o.approved>0).sort((a,b)=>b.earn-a.earn||b.approved-a.approved);
+      }
+      async function fetchStatOffer(ds, de) {
+        const url = `${DC_API}/v1/stat/offer?currency=USD&date_start=${encodeURIComponent(ds)}&date_end=${encodeURIComponent(de)}&limit=50&sort_by=income&sort_type=DESC`;
+        const r = await fetch(url, {headers:h});
+        const d = await r.json();
+        console.log(`[DC ${id}] stat/offer raw (${ds.slice(0,10)}):`, JSON.stringify(d).slice(0,300));
+        const pl = d.payload || d;
+        return pl.items || pl.list || pl.data || (Array.isArray(pl)?pl:[]);
+      }
       let offersDay=[], offersWeek=[], offersMonth=[];
       try {
-        const catR  = await fetch(`${DC_API}/v1/offer?limit=50`, {headers:h});
-        const catD  = await catR.json();
-        const catPl = catD.payload || catD;
-        const catItems = catPl.items || catPl.list || (Array.isArray(catPl)?catPl:[]);
-        const catalog = catItems
-          .map(o => ({
-            name:   o.name || o.title || o.description || `Offer #${o.id||'?'}`,
-            net:    'DR.CASH', leads:0, approved:0, hold:0,
-            earn:   parseFloat(o.payout||o.approved||o.cpa||o.rate||o.price||0)||0,
-            geo:    (o.geo_code||o.geo||[]).join(', '),
-            isLive: false,
-          }))
-          .filter(o => o.earn > 0)
-          .sort((a,b) => b.earn - a.earn);
-        offersDay = offersWeek = offersMonth = catalog;
-        console.log(`[DC ${id}] catalog: ${catalog.length} offers`);
+        const [dayR, weekR, monthR] = await Promise.allSettled([
+          fetchStatOffer(toIso(todayStr, false),      toIso(todayStr, true)),
+          fetchStatOffer(toIso(weekStartStr, false),  toIso(todayStr, true)),
+          fetchStatOffer(toIso(monthStartStr, false), toIso(todayStr, true)),
+        ]);
+        offersDay   = parseStatOffers(dayR.status==='fulfilled'   ? dayR.value   : []);
+        offersWeek  = parseStatOffers(weekR.status==='fulfilled'  ? weekR.value  : []);
+        offersMonth = parseStatOffers(monthR.status==='fulfilled' ? monthR.value : []);
+        console.log(`[DC ${id}] stat/offer day:${offersDay.length} week:${offersWeek.length} month:${offersMonth.length}`);
       } catch(e){ console.log('[offers]', e.message); }
 
       return { id, income, approved, rejected, trash, hold, total, monthly, avail, pend, offersDay, offersWeek, offersMonth };
