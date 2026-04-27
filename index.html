@@ -2550,50 +2550,43 @@ async function fetchLiveData(){
     const settled = await Promise.allSettled(accounts.map(async ({id, token}) => {
       const h = {'Authorization':`Bearer ${token}`,'Accept':'application/json'};
 
-      /* CORE fetch — income/leads/balance — must never fail */
-      const [rOrder, rFin, rBal, rMonth] = await Promise.all([
-        fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${date}&date_to=${date}`, {headers:h}),
-        fetch(`${DC_API}/v1/chart/finance?scale=2&date_from=${date}&date_to=${date}`, {headers:h}),
+      /* UTC+1 (Morocco) aware date helpers */
+      const makeStart = (d) => {
+        const prev = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
+        return `${prev.getFullYear()}-${String(prev.getMonth()+1).padStart(2,'0')}-${String(prev.getDate()).padStart(2,'0')}T23:00:00Z`;
+      };
+      const makeEnd = (d) =>
+        `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T22:59:59Z`;
+
+      const monthFirstDay = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
+
+      /* CORE fetch — stat/date gives same data as the statistics page */
+      const [rStatDay, rStatMonth, rBal] = await Promise.all([
+        fetch(`${DC_API}/v1/stat/date?currency=USD&date_start=${encodeURIComponent(makeStart(TODAY))}&date_end=${encodeURIComponent(makeEnd(TODAY))}&limit=2&sort_by=date&sort_type=DESC`, {headers:h}),
+        fetch(`${DC_API}/v1/stat/date?currency=USD&date_start=${encodeURIComponent(makeStart(monthFirstDay))}&date_end=${encodeURIComponent(makeEnd(TODAY))}&limit=32&sort_by=date&sort_type=DESC`, {headers:h}),
         fetch(`${DC_API}/v1/balance`, {headers:h}),
-        fetch(`${DC_API}/v1/chart/finance?scale=2&date_from=${monthStart}&date_to=${date}`, {headers:h}),
       ]);
-      const oData = await rOrder.json();
-      const fData = await rFin.json();
-      const bData = await rBal.json();
-      const mData = await rMonth.json();
+      const sdDay   = await rStatDay.json();
+      const sdMonth = await rStatMonth.json();
+      const bData   = await rBal.json();
 
-      const op   = oData.payload || {};
-      const opKeys = Object.keys(op);
+      /* find today's row by date string */
+      const dayItems2   = (sdDay.payload?.items   || []);
+      const todayRow    = dayItems2.find(it => it.date === date) || dayItems2[0] || sdDay.payload?.total || {};
+      const monthItems2 = (sdMonth.payload?.items || []);
 
-      /* log every key and its value for today — helps find the rejected field name */
-      console.log(`[DC ${id}] order keys:`, opKeys.join(', '));
-      opKeys.forEach(k => {
-        if(Array.isArray(op[k])){
-          const v = pick(op[k], day);
-          console.log(`  [DC ${id}] key="${k}" value=${v}`);
-        }
-      });
-
-      const approved   = pick(op.approve, day);
-      const trash      = pick(op.trash,   day);
-      /* op.valid = all non-trash leads combined (approve+hold+reject) — NOT just hold */
-      const validTotal = pick(op.valid,   day);
-      /* Real total = validTotal + trash (op.valid already includes approved) */
-      const total = validTotal + trash;
-
-      const income   = pick((fData.payload||{}).profit, day);
-      const monthly  = ((mData.payload||{}).profit||[]).reduce((s,x) => s+(x.value||0), 0);
+      const income   = parseFloat(todayRow.sum_approved || 0) || 0;
+      const approved = parseInt(todayRow.order_approved || 0) || 0;
+      const trash    = parseInt(todayRow.order_trash    || 0) || 0;
+      const total    = parseInt(todayRow.order_all      || 0) || 0;
+      const monthly  = monthItems2.reduce((s, it) => s + (parseFloat(it.sum_approved) || 0), 0);
+      console.log(`[DC ${id}] stat/date today: income=${income} approved=${approved} trash=${trash} total=${total}`);
 
       const balItems = (bData.payload||{}).items || [];
       const avail    = (balItems.find(b=>b.type===0&&b.currency==='USD')||{}).sum || 0;
       const pend     = (balItems.find(b=>b.type===1&&b.currency==='USD')||{}).sum || 0;
 
-      /* OFFERS + real hold/rejected — all from /v1/stat/offer */
-      const weekStartStr  = dkey(getWeekStart(TODAY));
-      const monthStartStr = `${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}-01`;
-      const todayStr      = dkey(TODAY);
-
-      const toIso = (dateStr, isEnd) => dateStr + (isEnd ? 'T23:59:59Z' : 'T00:00:00Z');
+      /* OFFERS — real per-offer stats from /v1/stat/offer, same UTC+1 ranges */
 
       const parseStatOffers = (items) =>
         (items||[]).map(o => ({
@@ -2617,19 +2610,19 @@ async function fetchLiveData(){
 
       let offersDay=[], offersWeek=[], offersMonth=[], hold=0, rejected=0;
       try {
+        const weekMon = getWeekStart(TODAY);
         const [dayR, weekR, monthR] = await Promise.allSettled([
-          fetchStatOffer(toIso(todayStr, false),      toIso(todayStr, true)),
-          fetchStatOffer(toIso(weekStartStr, false),  toIso(todayStr, true)),
-          fetchStatOffer(toIso(monthStartStr, false), toIso(todayStr, true)),
+          fetchStatOffer(makeStart(TODAY),       makeEnd(TODAY)),
+          fetchStatOffer(makeStart(weekMon),     makeEnd(TODAY)),
+          fetchStatOffer(makeStart(monthFirstDay), makeEnd(TODAY)),
         ]);
-        const dayItems = dayR.status==='fulfilled' ? dayR.value : [];
-        /* real hold & rejected — summed directly from per-offer data */
-        hold     = dayItems.reduce((s,o) => s + (parseInt(o.order_hold||0)||0),     0);
-        rejected = dayItems.reduce((s,o) => s + (parseInt(o.order_rejected||0)||0), 0);
-        offersDay   = parseStatOffers(dayItems);
+        /* hold & rejected come from stat/date (same source as the statistics page) */
+        hold     = parseInt(todayRow.order_hold     || 0) || 0;
+        rejected = parseInt(todayRow.order_rejected || 0) || 0;
+        offersDay   = parseStatOffers(dayR.status==='fulfilled'   ? dayR.value   : []);
         offersWeek  = parseStatOffers(weekR.status==='fulfilled'  ? weekR.value  : []);
         offersMonth = parseStatOffers(monthR.status==='fulfilled' ? monthR.value : []);
-        console.log(`[DC ${id}] stat/offer day:${offersDay.length} hold:${hold} rejected:${rejected}`);
+        console.log(`[DC ${id}] hold=${hold} rejected=${rejected} offers day:${offersDay.length}`);
       } catch(e){ console.log('[offers catch]', e.message); }
 
       return { id, income, approved, rejected, trash, hold, total, monthly, avail, pend, offersDay, offersWeek, offersMonth };
