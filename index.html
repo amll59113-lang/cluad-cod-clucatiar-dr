@@ -2630,7 +2630,7 @@ async function fetchLiveData(){
           const top = catItems.slice(0, 25);
           const statsSettled = await Promise.allSettled(top.map(async (offer) => {
             const oId = offer.id;
-            const cpa = parseFloat(offer.payout||offer.cpa||offer.rate||offer.price||0)||0;
+            const cpa = parseFloat(offer.payout||offer.approved||offer.cpa||offer.rate||offer.price||0)||0;
             const name = offer.name||offer.title||`Offer #${oId}`;
             const geo  = (offer.geo_code||offer.geo||[]).join(', ');
             const [rD, rW, rM] = await Promise.allSettled([
@@ -2677,7 +2677,7 @@ async function fetchLiveData(){
               .map(o => ({
                 name:   o.name || o.title || o.description || `Offer #${o.id||'?'}`,
                 net:    'DR.CASH', leads:0, approved:0, hold:0,
-                earn:   parseFloat(o.payout||o.cpa||o.rate||o.price||0)||0,
+                earn:   parseFloat(o.payout||o.approved||o.cpa||o.rate||o.price||0)||0,
                 geo:    (o.geo_code||o.geo||[]).join(', '),
                 isLive: false,
               }))
