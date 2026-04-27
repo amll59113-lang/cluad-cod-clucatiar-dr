@@ -2622,12 +2622,12 @@ async function fetchLiveData(){
       }
       function parseStatOffers(items) {
         return (items||[]).map(o => ({
-          name:     o.name || o.offer_name || o.title || `Offer #${o.offer_id||o.id||'?'}`,
+          name:     o.offer_name_composite || o.offer_name || o.name || o.title || `Offer #${o.offer_id||o.id||'?'}`,
           net:      'DR.CASH',
-          leads:    parseInt(o.leads||o.click||o.clicks||o.total||0)||0,
-          approved: parseInt(o.approved||o.approve||o.conversions||0)||0,
-          hold:     parseInt(o.hold||0)||0,
-          earn:     parseFloat(o.income||o.revenue||o.profit||o.payout||o.earn||0)||0,
+          leads:    parseInt(o.order_all||o.leads||o.click_a||0)||0,
+          approved: parseInt(o.order_approved||o.approved||0)||0,
+          hold:     parseInt(o.order_hold||o.hold||0)||0,
+          earn:     parseFloat(o.sum_approved||o.income||o.revenue||o.profit||0)||0,
           geo:      Array.isArray(o.geo_code||o.geo) ? (o.geo_code||o.geo).join(', ') : (o.geo_code||o.geo||''),
           isLive:   true,
         })).filter(o => o.earn>0||o.approved>0).sort((a,b)=>b.earn-a.earn||b.approved-a.approved);
