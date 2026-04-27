@@ -2573,30 +2573,39 @@ async function fetchLiveData(){
       const avail    = (balItems.find(b=>b.type===0&&b.currency==='USD')||{}).sum || 0;
       const pend     = (balItems.find(b=>b.type===1&&b.currency==='USD')||{}).sum || 0;
 
-      /* OFFERS — single clean fetch, silent on failure */
+      /* OFFERS — try multiple endpoints, log result for debugging */
       let offers = [];
-      try {
-        const offResp = await fetch(
-          `${DC_API}/v1/stat/offer?date_from=${monthStart}&date_to=${date}&limit=100`,
-          {headers: h}
-        );
-        const offData = await offResp.json();
-        const pl = offData.payload || offData.data || offData || {};
-        const offItems = Array.isArray(pl) ? pl
-                       : (pl.items || pl.list || pl.data || pl.offers || []);
-        const parseN = v => parseFloat(v) || 0;
-        offers = offItems.map(o => {
-          const offerObj = o.offer || o.offer_info || {};
-          return {
-            name:     offerObj.name || o.offer_name || o.name || o.title || `Offer #${o.offer_id||o.id||'?'}`,
-            net:      'DR.CASH',
-            leads:    parseN(o.approve||o.approved||0) + parseN(o.valid||o.hold||0) + parseN(o.trash||0) + parseN(o.reject||o.rejected||0),
-            approved: parseN(o.approve || o.approved),
-            hold:     parseN(o.valid   || o.hold),
-            earn:     parseN(o.profit  || o.revenue || o.income || o.earn),
-          };
-        }).filter(o => o.leads > 0 || o.earn > 0);
-      } catch(e) { /* silent — CORS blocked from file://, offers stay empty */ }
+      const offerEndpoints = [
+        `${DC_API}/v1/stat/offer?date_from=${monthStart}&date_to=${date}&limit=100`,
+        `${DC_API}/v1/offer/stat?date_from=${monthStart}&date_to=${date}&limit=100`,
+        `${DC_API}/v1/report/offer?date_from=${monthStart}&date_to=${date}&limit=100`,
+        `${DC_API}/v1/stat?date_from=${monthStart}&date_to=${date}&group_by=offer&limit=100`,
+      ];
+      for(const offUrl of offerEndpoints){
+        try {
+          const offResp = await fetch(offUrl, {headers: h});
+          const offData = await offResp.json();
+          console.log(`[DC ${id}] offer endpoint ${offUrl.split('/v1/')[1].split('?')[0]} → status=${offResp.status}`, JSON.stringify(offData).slice(0,200));
+          if(!offResp.ok) continue;
+          const pl = offData.payload || offData.data || offData || {};
+          const offItems = Array.isArray(pl) ? pl
+                         : (pl.items || pl.list || pl.data || pl.offers || []);
+          if(!offItems.length) continue;
+          const parseN = v => parseFloat(v) || 0;
+          offers = offItems.map(o => {
+            const offerObj = o.offer || o.offer_info || {};
+            return {
+              name:     offerObj.name || o.offer_name || o.name || o.title || `Offer #${o.offer_id||o.id||'?'}`,
+              net:      'DR.CASH',
+              leads:    parseN(o.approve||o.approved||0) + parseN(o.valid||o.hold||0) + parseN(o.trash||0) + parseN(o.reject||o.rejected||0),
+              approved: parseN(o.approve || o.approved),
+              hold:     parseN(o.valid   || o.hold),
+              earn:     parseN(o.profit  || o.revenue || o.income || o.earn),
+            };
+          }).filter(o => o.leads > 0 || o.earn > 0);
+          if(offers.length) break; /* found working endpoint */
+        } catch(e) { console.log(`[DC ${id}] offer fetch failed:`, e.message); }
+      }
 
       return { id, income, approved, rejected, trash, hold, total, monthly, avail, pend, offers };
     }));
