@@ -1057,7 +1057,7 @@ body.light .goals-footer{border-top-color:rgba(0,0,0,.07)}
     </div>
 
     <div class="sec-block" id="offersSection">
-      <h2 class="sec-title">🏆 Offer Performance Ranking</h2>
+      <h2 class="sec-title">🏆 Top Offers by Payout</h2>
       <div id="offersContainer"></div>
     </div>
 
@@ -1869,15 +1869,21 @@ function renderBreakdown(accs){
 const RCLS=['r1','r2','r3','r4','r5'],RICO=['🥇','🥈','🥉','4','5'];
 function renderOffers(offers){
   const el = document.getElementById('offersContainer');
+  const titleEl = document.querySelector('#offersSection .sec-title');
   if(!offers||!offers.length){
     el.innerHTML='<div style="color:var(--t3);font-size:13px;padding:16px 0">No offer data — connect Dr.Cash and click Refresh</div>';
+    if(titleEl) titleEl.textContent = '🏆 Top Offers';
     return;
   }
+  const isLive = !!(offers[0]?.isLive);
+  if(titleEl) titleEl.textContent = isLive ? "🏆 Today's Best Offers" : '🏆 Top Offers by CPA Rate';
   const medals = ['🏆','🥈','🥉'];
   el.innerHTML=offers.slice(0,10).map((o,i)=>{
-    const apr = o.leads>0 ? Math.round(o.approved/o.leads*100) : 0;
-    const aprCls = apr>=60?'o-apr-good':apr>=30?'o-apr-mid':'o-apr-low';
     const rankLbl = i<3 ? medals[i] : `#${i+1}`;
+    const geo = o.geo ? `<span style="font-size:10px;color:var(--t3);margin-left:6px">${o.geo}</span>` : '';
+    const subLine = isLive
+      ? `<div class="o-inline-stats" style="color:var(--t3);font-size:11px">${o.approved}✓ / ${o.leads} leads</div>`
+      : `<div class="o-inline-stats" style="color:var(--t3);font-size:11px">CPA Rate</div>`;
     return `
     <div class="offer-item">
       <div class="o-rank ${RCLS[Math.min(i,4)]}">${rankLbl}</div>
@@ -1885,13 +1891,11 @@ function renderOffers(offers){
         <div class="o-name">${o.name}</div>
         <div class="o-tags">
           <span class="o-tag ${o.net==='ADCOMBO'?'tag-ac':'tag-dc'}">${o.net||'DR.CASH'}</span>
-          <span class="o-apr-badge ${aprCls}">${apr}% approved</span>
+          ${geo}
         </div>
       </div>
       <div class="o-right">
-        <div class="o-inline-stats">
-          ${o.leads} leads &nbsp;·&nbsp; <span class="osg">${o.approved} ✓</span> &nbsp;·&nbsp; <span class="osy">${o.hold} hold</span>
-        </div>
+        ${subLine}
         <div class="o-earn">${fmoney(o.earn)}</div>
       </div>
     </div>`;
@@ -2573,35 +2577,53 @@ async function fetchLiveData(){
       const avail    = (balItems.find(b=>b.type===0&&b.currency==='USD')||{}).sum || 0;
       const pend     = (balItems.find(b=>b.type===1&&b.currency==='USD')||{}).sum || 0;
 
-      /* OFFERS — /v1/chart/offer follows same pattern as /v1/chart/order (CORS-safe) */
+      /* OFFERS — try real per-offer performance from /v1/lead, fall back to catalog */
       let offers = [];
-      /* OFFERS — fetch individual orders for today, group by offer name */
       try {
-        const ordResp = await fetch(
-          `${DC_API}/v1/order?date_from=${date}&date_to=${date}&limit=50&page=1`,
-          {headers: h}
-        );
-        const ordData = await ordResp.json();
-        console.log(`[DC ${id}] orders for offers status=${ordResp.status}`, JSON.stringify(ordData).slice(0,400));
-        if(ordResp.ok){
-          const pl      = ordData.payload || ordData.data || ordData || {};
-          const items   = pl.items || pl.list || pl.data || (Array.isArray(pl) ? pl : []);
-          const parseN  = v => parseFloat(v) || 0;
-          const offerAgg = {};
-          items.forEach(o => {
-            const name = (o.offer && (o.offer.name || o.offer.title))
-                        || o.offer_name || o.name || `Offer #${o.offer_id||o.id||'?'}`;
-            if(!offerAgg[name]) offerAgg[name] = {name, net:'DR.CASH', leads:0, approved:0, hold:0, earn:0};
-            const st = String(o.status || o.status_id || '').toLowerCase();
-            offerAgg[name].leads++;
-            if(['approve','approved','1'].includes(st))       offerAgg[name].approved++;
-            else if(['hold','valid','pending','2'].includes(st)) offerAgg[name].hold++;
-            offerAgg[name].earn += parseN(o.profit || o.payout || o.revenue || o.earn);
-          });
-          offers = Object.values(offerAgg).sort((a,b) => b.earn - a.earn || b.leads - a.leads);
-          console.log(`[DC ${id}] offers from orders: ${offers.length}`);
+        const leadResp = await fetch(`${DC_API}/v1/lead?date_from=${date}&date_to=${date}&per_page=500`, {headers: h});
+        const leadData = await leadResp.json();
+        if(leadResp.ok){
+          const pl = leadData.payload || leadData;
+          const items = pl.items || pl.list || pl.data || (Array.isArray(pl) ? pl : []);
+          console.log(`[DC ${id}] /v1/lead → ${items.length} items, sample:`, JSON.stringify(items[0]||{}).slice(0,200));
+          if(items.length > 0){
+            const ofMap = {};
+            items.forEach(lead => {
+              const name = lead.offer?.name || lead.offer_name || lead.offer_title || `Offer #${lead.offer_id||'?'}`;
+              const geo  = lead.geo_code || lead.geo || lead.country || '';
+              if(!ofMap[name]) ofMap[name] = {name, net:'DR.CASH', leads:0, approved:0, hold:0, earn:0, geo, isLive:true};
+              ofMap[name].leads++;
+              const st = Number(lead.status);
+              if(st===1){ ofMap[name].approved++; ofMap[name].earn += parseFloat(lead.payout||lead.income||0); }
+              else if(st===3){ ofMap[name].hold++; }
+            });
+            offers = Object.values(ofMap).sort((a,b) => b.earn-a.earn || b.approved-a.approved);
+          }
         }
-      } catch(e){ console.log(`[DC ${id}] order-based offers failed:`, e.message); }
+      } catch(e){ console.log('[offers] lead fetch failed:', e.message); }
+
+      /* fallback: offer catalog sorted by CPA rate */
+      if(!offers.length){
+        try {
+          const offResp = await fetch(`${DC_API}/v1/offer?limit=50`, {headers: h});
+          const offData = await offResp.json();
+          if(offResp.ok){
+            const pl    = offData.payload || offData || {};
+            const items = pl.items || pl.list || (Array.isArray(pl) ? pl : []);
+            offers = items
+              .map(o => ({
+                name:     o.name || o.title || o.description || `Offer #${o.id||'?'}`,
+                net:      'DR.CASH',
+                leads:    0, approved: 0, hold: 0,
+                earn:     parseFloat(o.payout || o.cpa || o.rate || o.price || 0) || 0,
+                geo:      (o.geo_code || o.geo || []).join(', '),
+                isLive:   false,
+              }))
+              .filter(o => o.earn > 0)
+              .sort((a, b) => b.earn - a.earn);
+          }
+        } catch(e){ /* silent */ }
+      }
 
       return { id, income, approved, rejected, trash, hold, total, monthly, avail, pend, offers };
     }));
