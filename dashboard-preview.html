@@ -1899,16 +1899,16 @@ function renderOffers(offers, tab){
   tab = tab || curOffTab || 'day';
   const el = document.getElementById('offersContainer');
   const titleEl = document.getElementById('offersSectionTitle');
-  const TAB_TITLE = {day:"🏆 Today's Best Offers", week:'🏆 This Week\'s Best Offers', month:'🏆 This Month\'s Best Offers'};
+  const TAB_TITLE = {day:'🏆 Top 5 Today', week:'🏆 Top 5 This Week', month:'🏆 Top 5 This Month'};
   if(!offers||!offers.length){
     el.innerHTML='<div style="color:var(--t3);font-size:13px;padding:16px 0">No offer data — connect Dr.Cash and click Refresh</div>';
     if(titleEl) titleEl.textContent = '🏆 Top Offers';
     return;
   }
   const isLive = !!(offers[0]?.isLive);
-  if(titleEl) titleEl.textContent = isLive ? TAB_TITLE[tab] : '🏆 Top Offers by CPA Rate';
+  if(titleEl) titleEl.textContent = isLive ? TAB_TITLE[tab] : '🏆 Top 5 Offers by CPA Rate';
   const medals = ['🏆','🥈','🥉'];
-  el.innerHTML=offers.slice(0,10).map((o,i)=>{
+  el.innerHTML=offers.slice(0,5).map((o,i)=>{
     const rankLbl = i<3 ? medals[i] : `#${i+1}`;
     const geo = o.geo ? `<span style="font-size:10px;color:var(--t3);margin-left:6px">${o.geo}</span>` : '';
     const subLine = isLive
