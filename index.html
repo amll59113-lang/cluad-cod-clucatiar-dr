@@ -2570,9 +2570,8 @@ async function fetchLiveData(){
       const sdMonth = await rStatMonth.json();
       const bData   = await rBal.json();
 
-      /* find today's row by date string */
-      const dayItems2   = (sdDay.payload?.items   || []);
-      const todayRow    = dayItems2.find(it => it.date === date) || dayItems2[0] || sdDay.payload?.total || {};
+      /* use payload.total — already sums ALL items in the range (handles timezone splits) */
+      const todayRow    = sdDay.payload?.total   || (sdDay.payload?.items||[])[0]   || {};
       const monthItems2 = (sdMonth.payload?.items || []);
 
       const income   = parseFloat(todayRow.sum_approved || 0) || 0;
