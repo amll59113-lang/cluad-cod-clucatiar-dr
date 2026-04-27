@@ -1902,7 +1902,7 @@ function renderOffers(offers, tab){
   tab = tab || curOffTab || 'day';
   const el = document.getElementById('offersContainer');
   const titleEl = document.getElementById('offersSectionTitle');
-  const TAB_TITLE = {day:'🏆 Top 5 Today', week:'🏆 Top 5 This Week', month:'🏆 Top 5 This Month'};
+  const TAB_TITLE = {day:'🏆 Top 5 Offers', week:'🏆 Top 5 Offers', month:'🏆 Top 5 Offers'};
   if(!offers||!offers.length){
     el.innerHTML='<div style="color:var(--t3);font-size:13px;padding:16px 0">No offer data — connect Dr.Cash and click Refresh</div>';
     if(titleEl) titleEl.textContent = '🏆 Top Offers';
@@ -1927,7 +1927,9 @@ function renderOffers(offers, tab){
       <div class="o-right">
         <div class="o-stats-earn">
           <div class="o-earn">${fmoney(o.earn)}</div>
-          <div class="o-lead-row"><span class="olr-leads">${o.leads} leads</span><span class="olr-sep">·</span><span class="olr-apr">${o.approved} ✓</span><span class="olr-sep">·</span><span class="olr-hold">${o.hold} hold</span></div>
+          ${isLive
+            ? `<div class="o-lead-row"><span class="olr-leads">${o.leads} leads</span><span class="olr-sep">·</span><span class="olr-apr">${o.approved} ✓</span><span class="olr-sep">·</span><span class="olr-hold">${o.hold} hold</span></div>`
+            : `<div class="o-lead-row"><span class="olr-leads" style="color:var(--t3)">CPA Rate</span></div>`}
         </div>
       </div>
     </div>`;
@@ -2614,79 +2616,26 @@ async function fetchLiveData(){
       const weekStartStr  = dkey(getWeekStart(TODAY));
       const monthStartStr = `${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}-01`;
 
-      /* OFFERS — /v1/chart/order?offer_id=X  (same proven endpoint, per-offer filter) */
-      const sumArr = (arr) => (arr||[]).reduce((s,x)=>s+(Number(x.value)||0), 0);
-
+      /* OFFERS — catalog sorted by CPA rate (per-offer live stats not available via affiliate API) */
       let offersDay=[], offersWeek=[], offersMonth=[];
       try {
-        /* Step 1: catalog for offer IDs + CPA rates */
         const catR  = await fetch(`${DC_API}/v1/offer?limit=50`, {headers:h});
         const catD  = await catR.json();
         const catPl = catD.payload || catD;
         const catItems = catPl.items || catPl.list || (Array.isArray(catPl)?catPl:[]);
-
-        if(catItems.length){
-          /* Step 2: for each offer fetch chart/order for today, week, month — all parallel */
-          const top = catItems.slice(0, 25);
-          const statsSettled = await Promise.allSettled(top.map(async (offer) => {
-            const oId = offer.id;
-            const cpa = parseFloat(offer.payout||offer.approved||offer.cpa||offer.rate||offer.price||0)||0;
-            const name = offer.name||offer.title||`Offer #${oId}`;
-            const geo  = (offer.geo_code||offer.geo||[]).join(', ');
-            const [rD, rW, rM] = await Promise.allSettled([
-              fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${date}&date_to=${date}&offer_id=${oId}`,          {headers:h}),
-              fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${weekStartStr}&date_to=${date}&offer_id=${oId}`,  {headers:h}),
-              fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${monthStartStr}&date_to=${date}&offer_id=${oId}`, {headers:h}),
-            ]);
-            const toOffer = async (s) => {
-              if(s.status!=='fulfilled'||!s.value.ok) return null;
-              const d2 = await s.value.json();
-              const op = d2.payload || {};
-              if(op.code) return null;
-              const apr = sumArr(op.approve);
-              if(!apr && !sumArr(op.valid)) return null;
-              const tr  = sumArr(op.trash);
-              const vl  = sumArr(op.valid);
-              return { name, net:'DR.CASH', approved:apr, leads:vl+tr,
-                       hold:Math.max(0,vl-apr), earn:apr*cpa, geo, isLive:true };
-            };
-            return { day: await toOffer(rD), week: await toOffer(rW), month: await toOffer(rM) };
-          }));
-
-          const collect = (key) => {
-            const arr = [];
-            statsSettled.forEach(s => { if(s.status==='fulfilled' && s.value[key]) arr.push(s.value[key]); });
-            return arr.sort((a,b)=>b.earn-a.earn||b.approved-a.approved);
-          };
-          offersDay   = collect('day');
-          offersWeek  = collect('week');
-          offersMonth = collect('month');
-          console.log(`[DC ${id}] chart/order per-offer: day=${offersDay.length} week=${offersWeek.length} month=${offersMonth.length}`);
-        }
+        const catalog = catItems
+          .map(o => ({
+            name:   o.name || o.title || o.description || `Offer #${o.id||'?'}`,
+            net:    'DR.CASH', leads:0, approved:0, hold:0,
+            earn:   parseFloat(o.payout||o.approved||o.cpa||o.rate||o.price||0)||0,
+            geo:    (o.geo_code||o.geo||[]).join(', '),
+            isLive: false,
+          }))
+          .filter(o => o.earn > 0)
+          .sort((a,b) => b.earn - a.earn);
+        offersDay = offersWeek = offersMonth = catalog;
+        console.log(`[DC ${id}] catalog: ${catalog.length} offers`);
       } catch(e){ console.log('[offers]', e.message); }
-
-      /* fallback catalog if offer_id filter returned nothing */
-      if(!offersDay.length && !offersWeek.length && !offersMonth.length){
-        try {
-          const offResp = await fetch(`${DC_API}/v1/offer?limit=50`, {headers: h});
-          const offData = await offResp.json();
-          if(offResp.ok){
-            const pl    = offData.payload || offData || {};
-            const items = pl.items || pl.list || (Array.isArray(pl) ? pl : []);
-            const catalog = items
-              .map(o => ({
-                name:   o.name || o.title || o.description || `Offer #${o.id||'?'}`,
-                net:    'DR.CASH', leads:0, approved:0, hold:0,
-                earn:   parseFloat(o.payout||o.approved||o.cpa||o.rate||o.price||0)||0,
-                geo:    (o.geo_code||o.geo||[]).join(', '),
-                isLive: false,
-              }))
-              .filter(o => o.earn > 0)
-              .sort((a,b) => b.earn - a.earn);
-            offersDay = offersWeek = offersMonth = catalog;
-          }
-        } catch(e){ /* silent */ }
-      }
 
       return { id, income, approved, rejected, trash, hold, total, monthly, avail, pend, offersDay, offersWeek, offersMonth };
     }));
