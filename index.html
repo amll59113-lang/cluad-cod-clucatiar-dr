@@ -2632,14 +2632,17 @@ async function fetchLiveData(){
           isLive:   true,
         })).filter(o => o.earn>0||o.approved>0).sort((a,b)=>b.earn-a.earn||b.approved-a.approved);
       }
-      async function fetchStatOffer(ds, de) {
-        const url = `${DC_API}/v1/stat/offer?currency=USD&date_start=${encodeURIComponent(ds)}&date_end=${encodeURIComponent(de)}&limit=50&sort_by=income&sort_type=DESC`;
+      const fetchStatOffer = async (ds, de) => {
+        const url = `${DC_API}/v1/stat/offer?currency=USD&date_start=${encodeURIComponent(ds)}&date_end=${encodeURIComponent(de)}&limit=50&sort_by=click_a&sort_type=DESC`;
         const r = await fetch(url, {headers:h});
-        const d = await r.json();
-        console.log(`[DC ${id}] stat/offer raw (${ds.slice(0,10)}):`, JSON.stringify(d).slice(0,300));
-        const pl = d.payload || d;
-        return pl.items || pl.list || pl.data || (Array.isArray(pl)?pl:[]);
-      }
+        const raw = await r.json();
+        const snippet = JSON.stringify(raw).slice(0,400);
+        console.log(`[DC ${id}] stat/offer (${ds.slice(0,10)}) HTTP=${r.status}:`, snippet);
+        const pl = raw.payload ?? raw;
+        const items = pl.items ?? pl.list ?? pl.data ?? (Array.isArray(pl) ? pl : []);
+        console.log(`[DC ${id}] stat/offer items count:`, items.length, items[0] ? Object.keys(items[0]).join(',') : 'EMPTY');
+        return items;
+      };
       let offersDay=[], offersWeek=[], offersMonth=[];
       try {
         const [dayR, weekR, monthR] = await Promise.allSettled([
@@ -2650,8 +2653,11 @@ async function fetchLiveData(){
         offersDay   = parseStatOffers(dayR.status==='fulfilled'   ? dayR.value   : []);
         offersWeek  = parseStatOffers(weekR.status==='fulfilled'  ? weekR.value  : []);
         offersMonth = parseStatOffers(monthR.status==='fulfilled' ? monthR.value : []);
+        if(dayR.status==='rejected')   console.log('[offers day]',   dayR.reason);
+        if(weekR.status==='rejected')  console.log('[offers week]',  weekR.reason);
+        if(monthR.status==='rejected') console.log('[offers month]', monthR.reason);
         console.log(`[DC ${id}] stat/offer day:${offersDay.length} week:${offersWeek.length} month:${offersMonth.length}`);
-      } catch(e){ console.log('[offers]', e.message); }
+      } catch(e){ console.log('[offers catch]', e.message, e.stack); }
 
       return { id, income, approved, rejected, trash, hold, total, monthly, avail, pend, offersDay, offersWeek, offersMonth };
     }));
