@@ -2581,30 +2581,9 @@ async function fetchLiveData(){
       /* Real total = validTotal + trash (op.valid already includes approved) */
       const total = validTotal + trash;
 
-      /* Get hold+rejected by trying multiple endpoints */
+      /* hold = remaining valid after approved (rejected comes from stat/offer later) */
       let hold = 0, rejected = 0;
-      const tryEndpoints = [
-        `${DC_API}/v1/order?date_from=${date}&date_to=${date}&status=3&per_page=500`,
-        `${DC_API}/v1/order?date_from=${date}&date_to=${date}&status[]=3&per_page=500`,
-        `${DC_API}/v1/lead?date_from=${date}&date_to=${date}&status=3&per_page=500`,
-        `${DC_API}/v1/lead?date_from=${date}&date_to=${date}&status[]=3&per_page=500`,
-      ];
-      for(const url of tryEndpoints){
-        try{
-          const r = await fetch(url, {headers:h});
-          if(!r.ok) continue;
-          const d2 = await r.json();
-          const pl = d2.payload || d2;
-          const total = pl.total ?? pl.count ?? pl.length ?? null;
-          const items = pl.items || pl.list || pl.data || (Array.isArray(pl)?pl:[]);
-          const cnt = total != null ? parseInt(total)||0 : items.length;
-          console.log(`[DC ${id}] tried: ${url.split('?')[1]} → cnt=${cnt} payload:`, JSON.stringify(d2).slice(0,150));
-          if(cnt > 0){ rejected = cnt; break; }
-        }catch(e){ console.log(`[DC ${id}] endpoint failed:`,e.message); }
-      }
-      /* hold = remaining valid after approved and rejected */
-      hold = Math.max(0, validTotal - approved - rejected);
-      console.log(`[DC ${id}] final — hold=${hold} rejected=${rejected} valid=${validTotal} approved=${approved}`);
+      hold = Math.max(0, validTotal - approved);
       const income   = pick((fData.payload||{}).profit, day);
       const monthly  = ((mData.payload||{}).profit||[]).reduce((s,x) => s+(x.value||0), 0);
 
@@ -2643,23 +2622,29 @@ async function fetchLiveData(){
         console.log(`[DC ${id}] stat/offer items count:`, items.length, items[0] ? Object.keys(items[0]).join(',') : 'EMPTY');
         return items;
       };
-      let offersDay=[], offersWeek=[], offersMonth=[];
+      let offersDay=[], offersWeek=[], offersMonth=[], rejectedFromOffers=0;
       try {
         const [dayR, weekR, monthR] = await Promise.allSettled([
           fetchStatOffer(toIso(todayStr, false),      toIso(todayStr, true)),
           fetchStatOffer(toIso(weekStartStr, false),  toIso(todayStr, true)),
           fetchStatOffer(toIso(monthStartStr, false), toIso(todayStr, true)),
         ]);
-        offersDay   = parseStatOffers(dayR.status==='fulfilled'   ? dayR.value   : []);
+        const dayItems = dayR.status==='fulfilled' ? dayR.value : [];
+        /* sum order_rejected from today's offer stats — this is the real rejected count */
+        rejectedFromOffers = dayItems.reduce((s,o) => s + (parseInt(o.order_rejected||0)||0), 0);
+        offersDay   = parseStatOffers(dayItems);
         offersWeek  = parseStatOffers(weekR.status==='fulfilled'  ? weekR.value  : []);
         offersMonth = parseStatOffers(monthR.status==='fulfilled' ? monthR.value : []);
         if(dayR.status==='rejected')   console.log('[offers day]',   dayR.reason);
         if(weekR.status==='rejected')  console.log('[offers week]',  weekR.reason);
         if(monthR.status==='rejected') console.log('[offers month]', monthR.reason);
-        console.log(`[DC ${id}] stat/offer day:${offersDay.length} week:${offersWeek.length} month:${offersMonth.length}`);
+        console.log(`[DC ${id}] stat/offer day:${offersDay.length} week:${offersWeek.length} month:${offersMonth.length} rejected:${rejectedFromOffers}`);
       } catch(e){ console.log('[offers catch]', e.message, e.stack); }
 
-      return { id, income, approved, rejected, trash, hold, total, monthly, avail, pend, offersDay, offersWeek, offersMonth };
+      /* use rejected from stat/offer (real data) instead of failed endpoint attempts */
+      const finalRejected = rejectedFromOffers || rejected;
+
+      return { id, income, approved, rejected: finalRejected, trash, hold, total, monthly, avail, pend, offersDay, offersWeek, offersMonth };
     }));
 
     /* collect only the accounts that succeeded; warn on failures */
