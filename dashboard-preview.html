@@ -445,9 +445,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .cal-trigger.open .cal-trigger-chevron{transform:rotate(180deg)}
 
 .cal-dropdown{position:absolute;top:calc(100% + 10px);left:0;z-index:600;width:638px;
-  background:rgba(7,12,26,.98);border:1px solid rgba(255,255,255,.1);border-radius:20px;
-  box-shadow:0 32px 80px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.04),
-    inset 0 1px 0 rgba(255,255,255,.05);
+  background:#07080e;border:1px solid rgba(255,255,255,.12);border-radius:20px;
+  box-shadow:0 32px 80px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.05),
+    inset 0 1px 0 rgba(255,255,255,.06);
   opacity:0;pointer-events:none;
   transform:translateY(-10px) scale(.97);
   transition:opacity .2s ease,transform .24s cubic-bezier(.34,1.56,.64,1)}
@@ -455,7 +455,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 
 .cal-months-grid{display:grid;grid-template-columns:1fr 1px 1fr}
 .cal-divider{background:rgba(255,255,255,.07);margin:20px 0}
-.cal-month-panel{padding:22px 22px 18px}
+.cal-month-panel{padding:22px 22px 18px;background:#07080e}
 
 .cal-mnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:6px}
 .cal-nav-grp{display:flex;gap:4px}
@@ -497,7 +497,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 
 .cal-foot{display:flex;align-items:center;justify-content:space-between;
   padding:14px 22px;border-bottom:1px solid rgba(255,255,255,.07);
-  background:rgba(3,5,14,.5);border-radius:20px 20px 0 0}
+  background:#07080e;border-radius:20px 20px 0 0}
 .cal-foot-lbl{font-size:12px;color:var(--t3);font-weight:500}
 .cal-foot-lbl b{color:var(--grl);font-weight:700}
 .cal-foot-btns{display:flex;gap:8px}
@@ -867,8 +867,7 @@ body.light .goals-footer{border-top-color:rgba(0,0,0,.07)}
       </button>
 
       <div class="cal-dropdown" id="calDropdown"
-        onclick="event.stopPropagation();var _t=event.target.closest('[data-ds]');if(_t)calDayClick(_t.dataset.ds)"
-        onmouseover="var _t=event.target.closest('[data-ds]');if(_t)calHovDay(_t.dataset.ds)"
+        onclick="event.stopPropagation()"
         onmouseleave="calLeaveGrid()">
         <div class="cal-foot">
           <span class="cal-foot-lbl" id="calFootLbl">Select a start date</span>
@@ -2550,92 +2549,79 @@ async function fetchLiveData(){
     const settled = await Promise.allSettled(accounts.map(async ({id, token}) => {
       const h = {'Authorization':`Bearer ${token}`,'Accept':'application/json'};
 
-      /* CORE fetch — income/leads/balance — must never fail */
-      const [rOrder, rFin, rBal, rMonth] = await Promise.all([
-        fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${date}&date_to=${date}`, {headers:h}),
-        fetch(`${DC_API}/v1/chart/finance?scale=2&date_from=${date}&date_to=${date}`, {headers:h}),
+      /* UTC+1 (Morocco) aware date helpers */
+      const makeStart = (d) => {
+        const prev = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
+        return `${prev.getFullYear()}-${String(prev.getMonth()+1).padStart(2,'0')}-${String(prev.getDate()).padStart(2,'0')}T23:00:00Z`;
+      };
+      const makeEnd = (d) =>
+        `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T22:59:59Z`;
+
+      const monthFirstDay = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
+
+      /* CORE fetch — stat/date gives same data as the statistics page */
+      const [rStatDay, rStatMonth, rBal] = await Promise.all([
+        fetch(`${DC_API}/v1/stat/date?currency=USD&date_start=${encodeURIComponent(makeStart(TODAY))}&date_end=${encodeURIComponent(makeEnd(TODAY))}&limit=2&sort_by=date&sort_type=DESC`, {headers:h}),
+        fetch(`${DC_API}/v1/stat/date?currency=USD&date_start=${encodeURIComponent(makeStart(monthFirstDay))}&date_end=${encodeURIComponent(makeEnd(TODAY))}&limit=32&sort_by=date&sort_type=DESC`, {headers:h}),
         fetch(`${DC_API}/v1/balance`, {headers:h}),
-        fetch(`${DC_API}/v1/chart/finance?scale=2&date_from=${monthStart}&date_to=${date}`, {headers:h}),
       ]);
-      const oData = await rOrder.json();
-      const fData = await rFin.json();
-      const bData = await rBal.json();
-      const mData = await rMonth.json();
+      const sdDay   = await rStatDay.json();
+      const sdMonth = await rStatMonth.json();
+      const bData   = await rBal.json();
 
-      const op   = oData.payload || {};
-      const opKeys = Object.keys(op);
+      /* use payload.total — already sums ALL items in the range (handles timezone splits) */
+      const todayRow    = sdDay.payload?.total   || (sdDay.payload?.items||[])[0]   || {};
+      const monthItems2 = (sdMonth.payload?.items || []);
 
-      /* log every key and its value for today — helps find the rejected field name */
-      console.log(`[DC ${id}] order keys:`, opKeys.join(', '));
-      opKeys.forEach(k => {
-        if(Array.isArray(op[k])){
-          const v = pick(op[k], day);
-          console.log(`  [DC ${id}] key="${k}" value=${v}`);
-        }
-      });
-
-      const approved   = pick(op.approve, day);
-      const trash      = pick(op.trash,   day);
-      /* op.valid = all non-trash leads combined (approve+hold+reject) — NOT just hold */
-      const validTotal = pick(op.valid,   day);
-      /* Real total = validTotal + trash (op.valid already includes approved) */
-      const total = validTotal + trash;
-
-      /* Get hold+rejected by trying multiple endpoints */
-      let hold = 0, rejected = 0;
-      const tryEndpoints = [
-        `${DC_API}/v1/order?date_from=${date}&date_to=${date}&status=3&per_page=500`,
-        `${DC_API}/v1/order?date_from=${date}&date_to=${date}&status[]=3&per_page=500`,
-        `${DC_API}/v1/lead?date_from=${date}&date_to=${date}&status=3&per_page=500`,
-        `${DC_API}/v1/lead?date_from=${date}&date_to=${date}&status[]=3&per_page=500`,
-      ];
-      for(const url of tryEndpoints){
-        try{
-          const r = await fetch(url, {headers:h});
-          if(!r.ok) continue;
-          const d2 = await r.json();
-          const pl = d2.payload || d2;
-          const total = pl.total ?? pl.count ?? pl.length ?? null;
-          const items = pl.items || pl.list || pl.data || (Array.isArray(pl)?pl:[]);
-          const cnt = total != null ? parseInt(total)||0 : items.length;
-          console.log(`[DC ${id}] tried: ${url.split('?')[1]} → cnt=${cnt} payload:`, JSON.stringify(d2).slice(0,150));
-          if(cnt > 0){ rejected = cnt; break; }
-        }catch(e){ console.log(`[DC ${id}] endpoint failed:`,e.message); }
-      }
-      /* hold = remaining valid after approved and rejected */
-      hold = Math.max(0, validTotal - approved - rejected);
-      console.log(`[DC ${id}] final — hold=${hold} rejected=${rejected} valid=${validTotal} approved=${approved}`);
-      const income   = pick((fData.payload||{}).profit, day);
-      const monthly  = ((mData.payload||{}).profit||[]).reduce((s,x) => s+(x.value||0), 0);
+      const income   = parseFloat(todayRow.sum_approved || 0) || 0;
+      const approved = parseInt(todayRow.order_approved || 0) || 0;
+      const trash    = parseInt(todayRow.order_trash    || 0) || 0;
+      const total    = parseInt(todayRow.order_all      || 0) || 0;
+      const monthly  = monthItems2.reduce((s, it) => s + (parseFloat(it.sum_approved) || 0), 0);
+      console.log(`[DC ${id}] stat/date today: income=${income} approved=${approved} trash=${trash} total=${total}`);
 
       const balItems = (bData.payload||{}).items || [];
       const avail    = (balItems.find(b=>b.type===0&&b.currency==='USD')||{}).sum || 0;
       const pend     = (balItems.find(b=>b.type===1&&b.currency==='USD')||{}).sum || 0;
 
-      /* OFFERS — paginated fetch for today / week / month (per_page capped at 500) */
-      const weekStartStr  = dkey(getWeekStart(TODAY));
-      const monthStartStr = `${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}-01`;
+      /* OFFERS — real per-offer stats from /v1/stat/offer, same UTC+1 ranges */
 
-      /* OFFERS — catalog sorted by CPA rate (per-offer live stats not available via affiliate API) */
-      let offersDay=[], offersWeek=[], offersMonth=[];
+      const parseStatOffers = (items) =>
+        (items||[]).map(o => ({
+          name:     o.offer_name_composite || o.offer_name || o.name || o.title || `Offer #${o.offer_id||o.id||'?'}`,
+          net:      'DR.CASH',
+          leads:    parseInt(o.order_all||o.leads||o.click_a||0)||0,
+          approved: parseInt(o.order_approved||o.approved||0)||0,
+          hold:     parseInt(o.order_hold||o.hold||0)||0,
+          earn:     parseFloat(o.sum_approved||o.income||o.revenue||o.profit||0)||0,
+          geo:      Array.isArray(o.geo_code||o.geo) ? (o.geo_code||o.geo).join(', ') : (o.geo_code||o.geo||''),
+          isLive:   true,
+        })).filter(o => o.earn>0||o.approved>0).sort((a,b)=>b.earn-a.earn||b.approved-a.approved);
+
+      const fetchStatOffer = async (ds, de) => {
+        const url = `${DC_API}/v1/stat/offer?currency=USD&date_start=${encodeURIComponent(ds)}&date_end=${encodeURIComponent(de)}&limit=200&sort_by=click_a&sort_type=DESC`;
+        const r = await fetch(url, {headers:h});
+        const raw = await r.json();
+        const pl = raw.payload ?? raw;
+        return pl.items ?? pl.list ?? pl.data ?? (Array.isArray(pl) ? pl : []);
+      };
+
+      let offersDay=[], offersWeek=[], offersMonth=[], hold=0, rejected=0;
       try {
-        const catR  = await fetch(`${DC_API}/v1/offer?limit=50`, {headers:h});
-        const catD  = await catR.json();
-        const catPl = catD.payload || catD;
-        const catItems = catPl.items || catPl.list || (Array.isArray(catPl)?catPl:[]);
-        const catalog = catItems
-          .map(o => ({
-            name:   o.name || o.title || o.description || `Offer #${o.id||'?'}`,
-            net:    'DR.CASH', leads:0, approved:0, hold:0,
-            earn:   parseFloat(o.payout||o.approved||o.cpa||o.rate||o.price||0)||0,
-            geo:    (o.geo_code||o.geo||[]).join(', '),
-            isLive: false,
-          }))
-          .filter(o => o.earn > 0)
-          .sort((a,b) => b.earn - a.earn);
-        offersDay = offersWeek = offersMonth = catalog;
-        console.log(`[DC ${id}] catalog: ${catalog.length} offers`);
-      } catch(e){ console.log('[offers]', e.message); }
+        const weekMon = getWeekStart(TODAY);
+        const [dayR, weekR, monthR] = await Promise.allSettled([
+          fetchStatOffer(makeStart(TODAY),       makeEnd(TODAY)),
+          fetchStatOffer(makeStart(weekMon),     makeEnd(TODAY)),
+          fetchStatOffer(makeStart(monthFirstDay), makeEnd(TODAY)),
+        ]);
+        /* hold & rejected come from stat/date (same source as the statistics page) */
+        hold     = parseInt(todayRow.order_hold     || 0) || 0;
+        rejected = parseInt(todayRow.order_rejected || 0) || 0;
+        offersDay   = parseStatOffers(dayR.status==='fulfilled'   ? dayR.value   : []);
+        offersWeek  = parseStatOffers(weekR.status==='fulfilled'  ? weekR.value  : []);
+        offersMonth = parseStatOffers(monthR.status==='fulfilled' ? monthR.value : []);
+        console.log(`[DC ${id}] hold=${hold} rejected=${rejected} offers day:${offersDay.length}`);
+      } catch(e){ console.log('[offers catch]', e.message); }
 
       return { id, income, approved, rejected, trash, hold, total, monthly, avail, pend, offersDay, offersWeek, offersMonth };
     }));
@@ -2925,7 +2911,7 @@ function calBuildMonth(panelId, year, month, isLeft){
     if(isFut){
       days += `<span class="${cls}">${d}</span>`;
     } else {
-      days += `<span class="${cls}" data-ds="${ds}">${d}</span>`;
+      days += `<span class="${cls}" data-ds="${ds}" onclick="event.stopPropagation();calDayClick('${ds}')" onmouseover="event.stopPropagation();calHovDay('${ds}')">${d}</span>`;
     }
   }
 
