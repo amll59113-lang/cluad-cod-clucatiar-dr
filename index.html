@@ -2614,59 +2614,58 @@ async function fetchLiveData(){
       const weekStartStr  = dkey(getWeekStart(TODAY));
       const monthStartStr = `${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}-01`;
 
-      const parseLeadsItems = (items) => {
-        if(!items.length) return [];
-        const ofMap = {};
-        items.forEach(lead => {
-          const name = lead.offer?.name || lead.offer_name || lead.offer_title || `Offer #${lead.offer_id||'?'}`;
-          const geo  = lead.geo_code || lead.geo || lead.country || '';
-          if(!ofMap[name]) ofMap[name] = {name, net:'DR.CASH', leads:0, approved:0, hold:0, earn:0, geo, isLive:true};
-          ofMap[name].leads++;
-          const st = Number(lead.status);
-          if(st===1){ ofMap[name].approved++; ofMap[name].earn += parseFloat(lead.payout||lead.income||0); }
-          else if(st===3){ ofMap[name].hold++; }
-        });
-        return Object.values(ofMap).sort((a,b) => b.earn-a.earn || b.approved-a.approved);
-      };
-
-      /* helper: fetch /v1/lead for a date range using offset pagination */
-      const fetchLeadsRange = async (dateFrom, dateTo, maxPages) => {
-        const allItems = [];
-        for(let p=0; p<maxPages; p++){
-          const off = p * 500;
-          try {
-            const url = off===0
-              ? `${DC_API}/v1/lead?date_from=${dateFrom}&date_to=${dateTo}&per_page=500`
-              : `${DC_API}/v1/lead?date_from=${dateFrom}&date_to=${dateTo}&per_page=500&offset=${off}`;
-            const r = await fetch(url, {headers:h});
-            const d = await r.json();
-            const pl = d.payload || d;
-            console.log(`[DC ${id}] /v1/lead ${dateFrom}→${dateTo} off=${off}: HTTP ${r.status} code=${d.code??'ok'} keys=[${Object.keys(pl).join(',')}] raw:`, JSON.stringify(d).slice(0,600));
-            if(!r.ok || d.code) break;
-            const items = pl.items || pl.list || pl.data || pl.collection || pl.rows || pl.result || pl.leads || (Array.isArray(pl)?pl:[]);
-            if(!items.length) break;
-            allItems.push(...items);
-            if(items.length < 500) break; /* last page */
-          } catch(e){ console.log(`[DC ${id}] /v1/lead error:`, e.message); break; }
-        }
-        return allItems;
-      };
+      /* OFFERS — /v1/chart/order?offer_id=X  (same proven endpoint, per-offer filter) */
+      const sumArr = (arr) => (arr||[]).reduce((s,x)=>s+(Number(x.value)||0), 0);
 
       let offersDay=[], offersWeek=[], offersMonth=[];
       try {
-        /* fetch all 3 ranges in parallel */
-        const [iDay, iWeek, iMonth] = await Promise.all([
-          fetchLeadsRange(date,          date,          1),
-          fetchLeadsRange(weekStartStr,  date,          2),
-          fetchLeadsRange(monthStartStr, date,          4),
-        ]);
-        offersDay   = parseLeadsItems(iDay);
-        offersWeek  = parseLeadsItems(iWeek);
-        offersMonth = parseLeadsItems(iMonth);
-        console.log(`[DC ${id}] offers day=${offersDay.length} week=${offersWeek.length} month=${offersMonth.length}`);
-      } catch(e){ console.log('[offers] lead fetch failed:', e.message); }
+        /* Step 1: catalog for offer IDs + CPA rates */
+        const catR  = await fetch(`${DC_API}/v1/offer?limit=50`, {headers:h});
+        const catD  = await catR.json();
+        const catPl = catD.payload || catD;
+        const catItems = catPl.items || catPl.list || (Array.isArray(catPl)?catPl:[]);
 
-      /* fallback catalog if all periods empty */
+        if(catItems.length){
+          /* Step 2: for each offer fetch chart/order for today, week, month — all parallel */
+          const top = catItems.slice(0, 25);
+          const statsSettled = await Promise.allSettled(top.map(async (offer) => {
+            const oId = offer.id;
+            const cpa = parseFloat(offer.payout||offer.cpa||offer.rate||offer.price||0)||0;
+            const name = offer.name||offer.title||`Offer #${oId}`;
+            const geo  = (offer.geo_code||offer.geo||[]).join(', ');
+            const [rD, rW, rM] = await Promise.allSettled([
+              fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${date}&date_to=${date}&offer_id=${oId}`,          {headers:h}),
+              fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${weekStartStr}&date_to=${date}&offer_id=${oId}`,  {headers:h}),
+              fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${monthStartStr}&date_to=${date}&offer_id=${oId}`, {headers:h}),
+            ]);
+            const toOffer = async (s) => {
+              if(s.status!=='fulfilled'||!s.value.ok) return null;
+              const d2 = await s.value.json();
+              const op = d2.payload || {};
+              if(op.code) return null;
+              const apr = sumArr(op.approve);
+              if(!apr && !sumArr(op.valid)) return null;
+              const tr  = sumArr(op.trash);
+              const vl  = sumArr(op.valid);
+              return { name, net:'DR.CASH', approved:apr, leads:vl+tr,
+                       hold:Math.max(0,vl-apr), earn:apr*cpa, geo, isLive:true };
+            };
+            return { day: await toOffer(rD), week: await toOffer(rW), month: await toOffer(rM) };
+          }));
+
+          const collect = (key) => {
+            const arr = [];
+            statsSettled.forEach(s => { if(s.status==='fulfilled' && s.value[key]) arr.push(s.value[key]); });
+            return arr.sort((a,b)=>b.earn-a.earn||b.approved-a.approved);
+          };
+          offersDay   = collect('day');
+          offersWeek  = collect('week');
+          offersMonth = collect('month');
+          console.log(`[DC ${id}] chart/order per-offer: day=${offersDay.length} week=${offersWeek.length} month=${offersMonth.length}`);
+        }
+      } catch(e){ console.log('[offers]', e.message); }
+
+      /* fallback catalog if offer_id filter returned nothing */
       if(!offersDay.length && !offersWeek.length && !offersMonth.length){
         try {
           const offResp = await fetch(`${DC_API}/v1/offer?limit=50`, {headers: h});
