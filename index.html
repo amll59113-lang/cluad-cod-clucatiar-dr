@@ -445,9 +445,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .cal-trigger.open .cal-trigger-chevron{transform:rotate(180deg)}
 
 .cal-dropdown{position:absolute;top:calc(100% + 10px);left:0;z-index:600;width:638px;
-  background:rgba(7,12,26,.98);border:1px solid rgba(255,255,255,.1);border-radius:20px;
-  box-shadow:0 32px 80px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.04),
-    inset 0 1px 0 rgba(255,255,255,.05);
+  background:#07080e;border:1px solid rgba(255,255,255,.12);border-radius:20px;
+  box-shadow:0 32px 80px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.05),
+    inset 0 1px 0 rgba(255,255,255,.06);
   opacity:0;pointer-events:none;
   transform:translateY(-10px) scale(.97);
   transition:opacity .2s ease,transform .24s cubic-bezier(.34,1.56,.64,1)}
@@ -455,7 +455,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 
 .cal-months-grid{display:grid;grid-template-columns:1fr 1px 1fr}
 .cal-divider{background:rgba(255,255,255,.07);margin:20px 0}
-.cal-month-panel{padding:22px 22px 18px}
+.cal-month-panel{padding:22px 22px 18px;background:#07080e}
 
 .cal-mnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:6px}
 .cal-nav-grp{display:flex;gap:4px}
@@ -497,7 +497,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 
 .cal-foot{display:flex;align-items:center;justify-content:space-between;
   padding:14px 22px;border-bottom:1px solid rgba(255,255,255,.07);
-  background:rgba(3,5,14,.5);border-radius:20px 20px 0 0}
+  background:#07080e;border-radius:20px 20px 0 0}
 .cal-foot-lbl{font-size:12px;color:var(--t3);font-weight:500}
 .cal-foot-lbl b{color:var(--grl);font-weight:700}
 .cal-foot-btns{display:flex;gap:8px}
@@ -867,8 +867,7 @@ body.light .goals-footer{border-top-color:rgba(0,0,0,.07)}
       </button>
 
       <div class="cal-dropdown" id="calDropdown"
-        onclick="event.stopPropagation();var _t=event.target.closest('[data-ds]');if(_t)calDayClick(_t.dataset.ds)"
-        onmouseover="var _t=event.target.closest('[data-ds]');if(_t)calHovDay(_t.dataset.ds)"
+        onclick="event.stopPropagation()"
         onmouseleave="calLeaveGrid()">
         <div class="cal-foot">
           <span class="cal-foot-lbl" id="calFootLbl">Select a start date</span>
@@ -2469,44 +2468,29 @@ async function fetchAdComboStats(token, date){
 async function fetchDayData(dateStr){
   const accounts = getDCTokens();
   if(!accounts.length) return;
-  const dayNum = String(parseInt(dateStr.split('-')[2]));
-  const _pick = (arr, key) => {
-    if(!arr || !arr.length) return 0;
-    const hit = arr.find(x => String(x.key) === String(key));
-    return hit ? (Number(hit.value) || 0) : 0;
-  };
+  /* Build UTC date object for the target day (Morocco = UTC+1, so day starts T23:00Z prev day) */
+  const [yr, mo, dy] = dateStr.split('-').map(Number);
+  const dayDate = new Date(Date.UTC(yr, mo - 1, dy));
+  const prevDay = new Date(Date.UTC(yr, mo - 1, dy - 1));
+  const ds = `${prevDay.getUTCFullYear()}-${String(prevDay.getUTCMonth()+1).padStart(2,'0')}-${String(prevDay.getUTCDate()).padStart(2,'0')}T23:00:00Z`;
+  const de = `${dayDate.getUTCFullYear()}-${String(dayDate.getUTCMonth()+1).padStart(2,'0')}-${String(dayDate.getUTCDate()).padStart(2,'0')}T22:59:59Z`;
   try {
     const settled = await Promise.allSettled(accounts.map(async ({id, token}) => {
       const h = {'Authorization':`Bearer ${token}`,'Accept':'application/json'};
-      const [rO, rF] = await Promise.all([
-        fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${dateStr}&date_to=${dateStr}`, {headers:h}),
-        fetch(`${DC_API}/v1/chart/finance?scale=2&date_from=${dateStr}&date_to=${dateStr}`, {headers:h}),
-      ]);
-      const op = ((await rO.json()).payload) || {};
-      const fp = ((await rF.json()).payload) || {};
-      const approved = _pick(op.approve, dayNum);
-      const trash    = _pick(op.trash,   dayNum);
-      const valid    = _pick(op.valid,   dayNum);
-      const total    = valid + trash;
-      const income   = _pick(fp.profit || [], dayNum);
-      let hold = Math.max(0, valid - approved), rejected = 0;
-      try {
-        const lR = await fetch(`${DC_API}/v1/lead?date_from=${dateStr}&date_to=${dateStr}&limit=1000`, {headers:h});
-        if(lR.ok){
-          const lD = await lR.json();
-          const pl = lD.payload || lD;
-          const it = pl.items || pl.list || pl.data || (Array.isArray(pl) ? pl : []);
-          let h2 = 0, r2 = 0;
-          it.forEach(lead => {
-            const st = String(lead.status || lead.status_id || lead.state || '').toLowerCase();
-            if(['hold','wait','waiting','on_hold','pending','2'].includes(st)) h2++;
-            else if(['reject','rejected','cancel','cancelled','canceled','refuse','refused',
-                     'decline','declined','revoke','revoked','not_approve','no_approve','3'].includes(st)) r2++;
-          });
-          if(h2 > 0 || r2 > 0){ hold = h2; rejected = r2; }
-        }
-      } catch(e){}
-      return { income, approved, rejected, trash, hold, total };
+      const url = `${DC_API}/v1/stat/date?currency=USD&date_start=${encodeURIComponent(ds)}&date_end=${encodeURIComponent(de)}&limit=2&sort_by=date&sort_type=DESC`;
+      const r = await fetch(url, {headers:h});
+      const raw = await r.json();
+      console.log(`[fetchDayData ${id}] raw:`, JSON.stringify(raw.payload?.total), 'items:', raw.payload?.items?.length);
+      const row = raw.payload?.total || (raw.payload?.items||[])[0] || {};
+      console.log(`[fetchDayData ${id}] row:`, JSON.stringify(row));
+      return {
+        income:   parseFloat(row.sum_approved  || 0) || 0,
+        approved: parseInt(row.order_approved  || 0) || 0,
+        hold:     parseInt(row.order_hold      || 0) || 0,
+        rejected: parseInt(row.order_rejected  || 0) || 0,
+        trash:    parseInt(row.order_trash     || 0) || 0,
+        total:    parseInt(row.order_all       || 0) || 0,
+      };
     }));
     const ok = settled.filter(r => r.status === 'fulfilled').map(r => r.value);
     if(!ok.length) return;
@@ -2912,7 +2896,7 @@ function calBuildMonth(panelId, year, month, isLeft){
     if(isFut){
       days += `<span class="${cls}">${d}</span>`;
     } else {
-      days += `<span class="${cls}" data-ds="${ds}">${d}</span>`;
+      days += `<span class="${cls}" data-ds="${ds}" onclick="event.stopPropagation();calDayClick('${ds}')" onmouseover="event.stopPropagation();calHovDay('${ds}')">${d}</span>`;
     }
   }
 

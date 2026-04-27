@@ -2468,44 +2468,29 @@ async function fetchAdComboStats(token, date){
 async function fetchDayData(dateStr){
   const accounts = getDCTokens();
   if(!accounts.length) return;
-  const dayNum = String(parseInt(dateStr.split('-')[2]));
-  const _pick = (arr, key) => {
-    if(!arr || !arr.length) return 0;
-    const hit = arr.find(x => String(x.key) === String(key));
-    return hit ? (Number(hit.value) || 0) : 0;
-  };
+  /* Build UTC date object for the target day (Morocco = UTC+1, so day starts T23:00Z prev day) */
+  const [yr, mo, dy] = dateStr.split('-').map(Number);
+  const dayDate = new Date(Date.UTC(yr, mo - 1, dy));
+  const prevDay = new Date(Date.UTC(yr, mo - 1, dy - 1));
+  const ds = `${prevDay.getUTCFullYear()}-${String(prevDay.getUTCMonth()+1).padStart(2,'0')}-${String(prevDay.getUTCDate()).padStart(2,'0')}T23:00:00Z`;
+  const de = `${dayDate.getUTCFullYear()}-${String(dayDate.getUTCMonth()+1).padStart(2,'0')}-${String(dayDate.getUTCDate()).padStart(2,'0')}T22:59:59Z`;
   try {
     const settled = await Promise.allSettled(accounts.map(async ({id, token}) => {
       const h = {'Authorization':`Bearer ${token}`,'Accept':'application/json'};
-      const [rO, rF] = await Promise.all([
-        fetch(`${DC_API}/v1/chart/order?scale=2&date_from=${dateStr}&date_to=${dateStr}`, {headers:h}),
-        fetch(`${DC_API}/v1/chart/finance?scale=2&date_from=${dateStr}&date_to=${dateStr}`, {headers:h}),
-      ]);
-      const op = ((await rO.json()).payload) || {};
-      const fp = ((await rF.json()).payload) || {};
-      const approved = _pick(op.approve, dayNum);
-      const trash    = _pick(op.trash,   dayNum);
-      const valid    = _pick(op.valid,   dayNum);
-      const total    = valid + trash;
-      const income   = _pick(fp.profit || [], dayNum);
-      let hold = Math.max(0, valid - approved), rejected = 0;
-      try {
-        const lR = await fetch(`${DC_API}/v1/lead?date_from=${dateStr}&date_to=${dateStr}&limit=1000`, {headers:h});
-        if(lR.ok){
-          const lD = await lR.json();
-          const pl = lD.payload || lD;
-          const it = pl.items || pl.list || pl.data || (Array.isArray(pl) ? pl : []);
-          let h2 = 0, r2 = 0;
-          it.forEach(lead => {
-            const st = String(lead.status || lead.status_id || lead.state || '').toLowerCase();
-            if(['hold','wait','waiting','on_hold','pending','2'].includes(st)) h2++;
-            else if(['reject','rejected','cancel','cancelled','canceled','refuse','refused',
-                     'decline','declined','revoke','revoked','not_approve','no_approve','3'].includes(st)) r2++;
-          });
-          if(h2 > 0 || r2 > 0){ hold = h2; rejected = r2; }
-        }
-      } catch(e){}
-      return { income, approved, rejected, trash, hold, total };
+      const url = `${DC_API}/v1/stat/date?currency=USD&date_start=${encodeURIComponent(ds)}&date_end=${encodeURIComponent(de)}&limit=2&sort_by=date&sort_type=DESC`;
+      const r = await fetch(url, {headers:h});
+      const raw = await r.json();
+      console.log(`[fetchDayData ${id}] raw:`, JSON.stringify(raw.payload?.total), 'items:', raw.payload?.items?.length);
+      const row = raw.payload?.total || (raw.payload?.items||[])[0] || {};
+      console.log(`[fetchDayData ${id}] row:`, JSON.stringify(row));
+      return {
+        income:   parseFloat(row.sum_approved  || 0) || 0,
+        approved: parseInt(row.order_approved  || 0) || 0,
+        hold:     parseInt(row.order_hold      || 0) || 0,
+        rejected: parseInt(row.order_rejected  || 0) || 0,
+        trash:    parseInt(row.order_trash     || 0) || 0,
+        total:    parseInt(row.order_all       || 0) || 0,
+      };
     }));
     const ok = settled.filter(r => r.status === 'fulfilled').map(r => r.value);
     if(!ok.length) return;
