@@ -867,7 +867,8 @@ body.light .goals-footer{border-top-color:rgba(0,0,0,.07)}
       </button>
 
       <div class="cal-dropdown" id="calDropdown"
-        onclick="event.stopPropagation()"
+        onclick="event.stopPropagation();var _t=event.target.closest('[data-ds]');if(_t)calDayClick(_t.dataset.ds)"
+        onmouseover="var _t=event.target.closest('[data-ds]');if(_t)calHovDay(_t.dataset.ds)"
         onmouseleave="calLeaveGrid()">
         <div class="cal-foot">
           <span class="cal-foot-lbl" id="calFootLbl">Select a start date</span>
@@ -2911,7 +2912,7 @@ function calBuildMonth(panelId, year, month, isLeft){
     if(isFut){
       days += `<span class="${cls}">${d}</span>`;
     } else {
-      days += `<span class="${cls}" data-ds="${ds}" onclick="event.stopPropagation();calDayClick('${ds}')" onmouseover="event.stopPropagation();calHovDay('${ds}')">${d}</span>`;
+      days += `<span class="${cls}" data-ds="${ds}">${d}</span>`;
     }
   }
 
