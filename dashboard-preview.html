@@ -2641,9 +2641,9 @@ async function fetchLiveData(){
             const r = await fetch(url, {headers:h});
             const d = await r.json();
             const pl = d.payload || d;
-            console.log(`[DC ${id}] /v1/lead ${dateFrom}→${dateTo} off=${off}: HTTP ${r.status} code=${d.code??'ok'} items=${(pl.items||pl.list||pl.data||[]).length}`);
+            console.log(`[DC ${id}] /v1/lead ${dateFrom}→${dateTo} off=${off}: HTTP ${r.status} code=${d.code??'ok'} keys=[${Object.keys(pl).join(',')}] raw:`, JSON.stringify(d).slice(0,600));
             if(!r.ok || d.code) break;
-            const items = pl.items || pl.list || pl.data || (Array.isArray(pl)?pl:[]);
+            const items = pl.items || pl.list || pl.data || pl.collection || pl.rows || pl.result || pl.leads || (Array.isArray(pl)?pl:[]);
             if(!items.length) break;
             allItems.push(...items);
             if(items.length < 500) break; /* last page */
