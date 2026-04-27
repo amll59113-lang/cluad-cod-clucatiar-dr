@@ -2576,9 +2576,7 @@ async function fetchLiveData(){
       /* OFFERS — /v1/chart/offer follows same pattern as /v1/chart/order (CORS-safe) */
       let offers = [];
       const offerUrls = [
-        `${DC_API}/v1/chart/offer?scale=3&date_from=${monthStart}&date_to=${date}`,
-        `${DC_API}/v1/offer?date_from=${monthStart}&date_to=${date}&limit=200`,
-        `${DC_API}/v1/offer/list?date_from=${monthStart}&date_to=${date}&limit=200`,
+        `${DC_API}/v1/offer?date_from=${monthStart}&date_to=${date}&limit=50`,
       ];
       for(const offUrl of offerUrls){
         try {
