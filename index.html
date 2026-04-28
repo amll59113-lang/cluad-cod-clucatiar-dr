@@ -3096,6 +3096,10 @@ function doLogin(){
     localStorage.setItem('atp_auth','1');
     document.getElementById('loginScreen').style.display='none';
     err.style.display='none';
+    setTimeout(()=>{
+      if(getDCTokens().length) fetchLiveData();
+      else if(conns['tiktok']) fetchTikTokData().then(s=>{ LIVE_DATA.spend=s; renderDashboard(); });
+    }, 400);
   } else {
     err.style.display='block';
     document.getElementById('loginPass').value='';
@@ -3159,11 +3163,13 @@ if(_firstRun){
 
 renderDashboard();
 updateConnUI();
-/* auto-fetch Dr.Cash + TikTok on load */
-setTimeout(()=>{
-  if(getDCTokens().length) fetchLiveData();
-  else if(conns['tiktok']) fetchTikTokData().then(s=>{ LIVE_DATA.spend=s; renderDashboard(); });
-}, 800);
+/* auto-fetch Dr.Cash + TikTok on load — only if authenticated */
+if(localStorage.getItem('atp_auth')==='1'){
+  setTimeout(()=>{
+    if(getDCTokens().length) fetchLiveData();
+    else if(conns['tiktok']) fetchTikTokData().then(s=>{ LIVE_DATA.spend=s; renderDashboard(); });
+  }, 800);
+}
 </script>
 </body>
 </html>
