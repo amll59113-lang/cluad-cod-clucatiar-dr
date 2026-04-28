@@ -2181,10 +2181,10 @@ function renderDashboard(){
     const acctLblI = filterDC && NETS[filterDC] ? NETS[filterDC].name : null;
     const hasIncEntry = incomeStore.hasOwnProperty(_inKey);
     let incSubTxt;
-    if(multi)         incSubTxt = hasIncEntry ? `${RANGE_CFG[curRange].label} · tap ✏️ to edit` : 'Tap ✏️ to enter income';
-    else if(acctLblI) incSubTxt = hasIncEntry ? `${acctLblI} · tap ✏️ to edit` : `${acctLblI} · tap ✏️ to enter`;
+    if(multi)         incSubTxt = hasIncEntry ? `${RANGE_CFG[curRange].label} · tap ✏️ to edit` : '';
+    else if(acctLblI) incSubTxt = hasIncEntry ? `${acctLblI} · tap ✏️ to edit` : `${acctLblI}`;
     else if(hasIncEntry) incSubTxt = 'All Networks · tap ✏️ to edit';
-    else              incSubTxt = (hasAnyConn()&&isToday) ? '🟢 Live · Dr.Cash + AdCombo' : 'Tap ✏️ to enter income';
+    else              incSubTxt = (hasAnyConn()&&isToday) ? '🟢 Live · Dr.Cash + AdCombo' : '';
     incSub.textContent = incSubTxt;
   }
   /* balance + goal only make sense for today's single-day view */
