@@ -677,27 +677,62 @@ body.light .goals-row{border-bottom-color:rgba(0,0,0,.07)}
 body.light .goals-footer{border-top-color:rgba(0,0,0,.07)}
 
 /* ══════════ LOGIN SCREEN ══════════ */
-.login-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;
-  justify-content:center;background:var(--bg0);}
-.login-screen::before{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(ellipse 60% 50% at 30% 30%,rgba(139,92,246,.13) 0%,transparent 65%),
-    radial-gradient(ellipse 50% 40% at 75% 75%,rgba(59,130,246,.10) 0%,transparent 60%)}
-.login-card{width:100%;max-width:400px;background:var(--bg1);border:1px solid var(--bd2);
-  border-radius:24px;padding:44px 36px 38px;position:relative;z-index:1;
-  box-shadow:0 48px 96px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04)}
-.login-logo{width:56px;height:56px;border-radius:16px;
+.login-screen{position:fixed;inset:0;z-index:9999;overflow-y:auto;
+  background:var(--bg0);display:flex;flex-direction:column;}
+.login-screen::before{content:'';position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 60% 50% at 20% 20%,rgba(139,92,246,.15) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 40% at 80% 80%,rgba(59,130,246,.12) 0%,transparent 60%)}
+/* ── landing nav ── */
+.lp-nav{display:flex;align-items:center;justify-content:space-between;
+  padding:22px 48px;position:relative;z-index:2;border-bottom:1px solid rgba(255,255,255,.06)}
+.lp-brand{display:flex;align-items:center;gap:12px}
+.lp-brand-icon{width:40px;height:40px;border-radius:12px;
   background:linear-gradient(135deg,var(--pu),var(--bl));
-  display:flex;align-items:center;justify-content:center;font-size:26px;
-  margin:0 auto 20px;box-shadow:0 0 32px var(--pug)}
-.login-title{font-size:22px;font-weight:900;color:var(--t1);text-align:center;
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  box-shadow:0 0 24px var(--pug)}
+.lp-brand-name{font-size:17px;font-weight:900;color:var(--t1);letter-spacing:-.3px}
+.lp-badge{font-size:10px;font-weight:700;color:var(--pu);background:rgba(139,92,246,.15);
+  border:1px solid rgba(139,92,246,.3);border-radius:20px;padding:3px 10px;margin-left:8px}
+/* ── hero ── */
+.lp-hero{display:flex;align-items:center;justify-content:center;gap:80px;
+  padding:72px 48px 60px;position:relative;z-index:1;flex:1}
+.lp-left{flex:1;max-width:520px}
+.lp-tag{font-size:11px;font-weight:700;color:var(--pu);text-transform:uppercase;
+  letter-spacing:2px;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.lp-tag::before{content:'';width:24px;height:2px;background:var(--pu);border-radius:2px}
+.lp-h1{font-size:42px;font-weight:900;color:var(--t1);line-height:1.15;
+  letter-spacing:-1px;margin-bottom:18px}
+.lp-h1 span{background:linear-gradient(135deg,var(--pu),var(--bl));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.lp-desc{font-size:15px;color:var(--t2);line-height:1.7;margin-bottom:36px}
+.lp-features{display:flex;flex-direction:column;gap:14px}
+.lp-feat{display:flex;align-items:flex-start;gap:12px}
+.lp-feat-icon{width:32px;height:32px;border-radius:9px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:15px}
+.lp-feat-icon.purple{background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.25)}
+.lp-feat-icon.blue{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.25)}
+.lp-feat-icon.green{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.25)}
+.lp-feat-icon.orange{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.25)}
+.lp-feat-text strong{display:block;font-size:13px;font-weight:700;color:var(--t1);margin-bottom:2px}
+.lp-feat-text span{font-size:12px;color:var(--t3);line-height:1.5}
+/* ── login card ── */
+.login-card{width:100%;max-width:380px;flex-shrink:0;background:var(--bg1);
+  border:1px solid var(--bd2);border-radius:24px;padding:40px 34px 36px;
+  position:relative;z-index:2;
+  box-shadow:0 48px 96px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04)}
+.login-logo{width:52px;height:52px;border-radius:14px;
+  background:linear-gradient(135deg,var(--pu),var(--bl));
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+  margin:0 auto 18px;box-shadow:0 0 28px var(--pug)}
+.login-title{font-size:20px;font-weight:900;color:var(--t1);text-align:center;
   letter-spacing:-.5px;margin-bottom:4px}
-.login-sub{font-size:12.5px;color:var(--t3);text-align:center;margin-bottom:30px}
-.login-field{margin-bottom:14px}
+.login-sub{font-size:12px;color:var(--t3);text-align:center;margin-bottom:28px}
+.login-field{margin-bottom:13px}
 .login-label{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;
   letter-spacing:1px;margin-bottom:6px;display:block}
 .login-inp{width:100%;background:var(--g8);border:1px solid var(--bd2);border-radius:11px;
   padding:11px 14px;font-size:14px;color:var(--t1);font-family:inherit;
-  transition:border-color .15s,box-shadow .15s}
+  transition:border-color .15s,box-shadow .15s;box-sizing:border-box}
 .login-inp:focus{outline:none;border-color:var(--pu);box-shadow:0 0 0 3px var(--pug);background:var(--g12)}
 .login-err{font-size:12px;color:var(--rel);margin-bottom:12px;display:none;
   background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);
@@ -708,27 +743,83 @@ body.light .goals-footer{border-top-color:rgba(0,0,0,.07)}
   box-shadow:0 4px 18px rgba(139,92,246,.4);transition:all .15s}
 .login-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
 .login-btn:active{transform:translateY(0)}
+.lp-footer{text-align:center;padding:24px;font-size:11px;color:var(--t3);
+  position:relative;z-index:2;border-top:1px solid rgba(255,255,255,.05)}
+@media(max-width:860px){
+  .lp-hero{flex-direction:column;padding:40px 24px;}
+  .lp-nav{padding:18px 24px}
+  .login-card{max-width:100%}
+}
 </style>
 </head>
 <body>
 
-<!-- ════════════ LOGIN SCREEN ════════════ -->
+<!-- ════════════ LANDING + LOGIN ════════════ -->
 <div class="login-screen" id="loginScreen">
-  <div class="login-card">
-    <div class="login-logo">📊</div>
-    <div class="login-title">Affiliate Tracker Pro</div>
-    <div class="login-sub">Sign in to access your dashboard</div>
-    <div class="login-field">
-      <label class="login-label">Username</label>
-      <input class="login-inp" id="loginUser" type="text" placeholder="Enter username" autocomplete="username">
+  <!-- Nav -->
+  <nav class="lp-nav">
+    <div class="lp-brand">
+      <div class="lp-brand-icon">📊</div>
+      <span class="lp-brand-name">AffiliateTrackerPro</span>
+      <span class="lp-badge">Personal Tool</span>
     </div>
-    <div class="login-field">
-      <label class="login-label">Password</label>
-      <input class="login-inp" id="loginPass" type="password" placeholder="Enter password" autocomplete="current-password">
+    <div style="font-size:12px;color:var(--t3)">affiliatetrackerpro.com</div>
+  </nav>
+  <!-- Hero -->
+  <div class="lp-hero">
+    <div class="lp-left">
+      <div class="lp-tag">Affiliate Marketing Dashboard</div>
+      <h1 class="lp-h1">Track Your Campaigns &amp;<br><span>Maximize Profit</span></h1>
+      <p class="lp-desc">A personal performance dashboard that automatically pulls ad spend from TikTok Ads and combines it with affiliate network earnings to calculate real-time profit, ROI, and campaign metrics.</p>
+      <div class="lp-features">
+        <div class="lp-feat">
+          <div class="lp-feat-icon purple">📈</div>
+          <div class="lp-feat-text">
+            <strong>Real-Time Ad Spend</strong>
+            <span>Pulls daily spend data directly from TikTok Ads API</span>
+          </div>
+        </div>
+        <div class="lp-feat">
+          <div class="lp-feat-icon blue">💰</div>
+          <div class="lp-feat-text">
+            <strong>Profit & ROI Tracking</strong>
+            <span>Combines ad spend with affiliate earnings for instant P&amp;L</span>
+          </div>
+        </div>
+        <div class="lp-feat">
+          <div class="lp-feat-icon green">✅</div>
+          <div class="lp-feat-text">
+            <strong>Lead Performance</strong>
+            <span>Tracks approved, hold, rejected and trash leads per offer</span>
+          </div>
+        </div>
+        <div class="lp-feat">
+          <div class="lp-feat-icon orange">🗓️</div>
+          <div class="lp-feat-text">
+            <strong>Historical Reports</strong>
+            <span>View performance for any day, week or custom date range</span>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="login-err" id="loginErr">❌ Incorrect username or password</div>
-    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <!-- Login Card -->
+    <div class="login-card">
+      <div class="login-logo">📊</div>
+      <div class="login-title">Sign In</div>
+      <div class="login-sub">Access your personal dashboard</div>
+      <div class="login-field">
+        <label class="login-label">Username</label>
+        <input class="login-inp" id="loginUser" type="text" placeholder="Enter username" autocomplete="username">
+      </div>
+      <div class="login-field">
+        <label class="login-label">Password</label>
+        <input class="login-inp" id="loginPass" type="password" placeholder="Enter password" autocomplete="current-password">
+      </div>
+      <div class="login-err" id="loginErr">❌ Incorrect username or password</div>
+      <button class="login-btn" onclick="doLogin()">Sign In →</button>
+    </div>
   </div>
+  <div class="lp-footer">© 2026 AffiliateTrackerPro · Personal affiliate marketing dashboard · Morocco</div>
 </div>
 
 <div class="app">
